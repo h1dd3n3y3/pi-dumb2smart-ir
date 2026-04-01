@@ -22,9 +22,17 @@ echo 'export PATH=$HOME/.local/bin:$PATH' >> ~/.bashrc && source ~/.bashrc
 
 ## Usage
 
+`pigpiod` must be running before starting the script. Start it manually:
+
 ```bash
 sudo pigpiod
 python3 remote.py
+```
+
+To start `pigpiod` automatically on every reboot, add it to crontab (`crontab -e`):
+
+```
+@reboot /usr/bin/sudo /usr/local/bin/pigpiod
 ```
 
 The interactive menu lets you:
