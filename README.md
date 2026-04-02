@@ -12,6 +12,7 @@ Python IR remote controller for the ANAVI Infrared pHAT on Raspberry Pi — reco
 - [PiIR](https://github.com/ts1/PiIR) by [ts1](https://github.com/ts1) — IR record/playback library
 
 ```bash
+sudo apt install python3-setuptools -y
 wget https://github.com/joan2937/pigpio/archive/master.zip
 unzip master.zip && cd pigpio-master && make && sudo make install
 cd && sudo rm -r master.zip pigpio-master
