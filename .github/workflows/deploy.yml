@@ -1,0 +1,15 @@
+name: Deploy to pi02-reader
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Pull latest code on pi02-reader
+        run: |
+          ssh -o StrictHostKeyChecking=no david@pi02-reader.local \
+            'cd ~/pi-dumb2smart-ir && git pull'
