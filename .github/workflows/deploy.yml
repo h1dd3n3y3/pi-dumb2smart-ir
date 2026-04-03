@@ -11,5 +11,5 @@ jobs:
     steps:
       - name: Pull latest code on pi02-reader
         run: |
-          ssh -o StrictHostKeyChecking=no david@pi02-reader.local \
+          ssh -o StrictHostKeyChecking=no david@pi02-reader \
             'cd ~/pi-dumb2smart-ir && git pull'
