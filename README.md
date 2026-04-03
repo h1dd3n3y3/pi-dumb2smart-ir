@@ -12,6 +12,8 @@ Python IR remote controller for the ANAVI Infrared pHAT on Raspberry Pi — reco
 - [PiIR](https://github.com/ts1/PiIR) by [ts1](https://github.com/ts1) — IR record/playback library
 
 ```bash
+git clone https://github.com/h1dd3n3y3/pi-dumb2smart-ir.git
+cd pi-dumb2smart-ir
 chmod +x install.sh && ./install.sh
 ```
 
