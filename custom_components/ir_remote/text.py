@@ -46,8 +46,9 @@ class KeyNameText(TextEntity):
         self._attr_name = f"{device_name} New Key Name".replace("_", " ").title()
         self._attr_unique_id = f"ir_remote_{device_name}_key_name"
         self._attr_native_value = ""
-        self._attr_native_min = 1
+        self._attr_native_min = 0
         self._attr_native_max = 64
+        self._attr_available = True
         self._attr_icon = "mdi:keyboard"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, f"ir_{device_name}")},
