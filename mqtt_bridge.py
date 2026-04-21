@@ -46,6 +46,8 @@ RECORD_STATUS_TOPIC = f"{BASE_TOPIC}/record/status"
 KEY_DELETE_TOPIC = f"{BASE_TOPIC}/key/delete"
 KEY_RENAME_TOPIC = f"{BASE_TOPIC}/key/rename"
 
+_remotes: dict = {}
+
 
 # ---------------------------------------------------------------------------
 # Device helpers
@@ -112,6 +114,18 @@ def publish_discovery(client: mqtt.Client, devices: dict) -> None:
     print(f"[INFO] Discovery published for {len(devices)} device(s).")
 
 
+def _build_remotes(devices: dict) -> None:
+    global _remotes
+    _remotes = {}
+    for device_name in devices:
+        device_path = os.path.join(_script_dir(), f"{device_name}.json")
+        try:
+            _remotes[device_name] = piir.Remote(device_path, TX_GPIO)
+        except Exception as exc:
+            print(f"[WARN] Could not load remote for {device_name}: {exc}")
+    print(f"[INFO] Remotes cached for: {list(_remotes)}")
+
+
 def _republish_devices(client: mqtt.Client) -> None:
     devices = load_all_devices()
     client.publish(DEVICES_TOPIC, json.dumps(devices), retain=True)
@@ -119,6 +133,7 @@ def _republish_devices(client: mqtt.Client) -> None:
         publish_discovery(client, devices)
         for device_name in devices:
             client.subscribe(f"{BASE_TOPIC}/{device_name}/send")
+        _build_remotes(devices)
     print("[INFO] Device list reloaded.")
 
 
@@ -212,6 +227,7 @@ def on_connect(client, userdata, _flags, rc, _properties=None):
     else:
         client.publish(DEVICES_TOPIC, json.dumps(devices), retain=True)
         publish_discovery(client, devices)
+        _build_remotes(devices)
         for device_name in devices:
             topic = f"{BASE_TOPIC}/{device_name}/send"
             client.subscribe(topic)
@@ -243,9 +259,11 @@ def on_message(client, userdata, msg):
         parts = topic.split("/")
         if len(parts) == 3:
             device_name = parts[1]
-            device_path = os.path.join(_script_dir(), f"{device_name}.json")
+            remote = _remotes.get(device_name)
+            if remote is None:
+                print(f"[ERROR] No cached remote for '{device_name}'")
+                return
             try:
-                remote = piir.Remote(device_path, TX_GPIO)
                 remote.send(payload)
                 print(f"[INFO] Sent: {device_name}/{payload}")
             except Exception as exc:
