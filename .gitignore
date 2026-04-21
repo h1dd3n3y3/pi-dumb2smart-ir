@@ -1,2 +1,5 @@
 actions-runner/
-*json
+*.json
+!custom_components/**/*.json
+!hacs.json
+.env
