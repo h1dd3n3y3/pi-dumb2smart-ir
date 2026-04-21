@@ -8,12 +8,13 @@ from homeassistant.helpers import config_validation as cv
 
 from .const import CONF_TOPIC_PREFIX, DEFAULT_TOPIC_PREFIX, DOMAIN
 
-PLATFORMS = ["button", "sensor"]
+PLATFORMS = ["button", "sensor", "text"]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = entry.data
+    hass.data[DOMAIN].setdefault("key_name_texts", {})
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     prefix = entry.data.get(CONF_TOPIC_PREFIX, DEFAULT_TOPIC_PREFIX)
