@@ -227,6 +227,131 @@ def action_list_keys(device_path: str) -> None:
         print(f"  {name:<20} {data}")
 
 
+def _pick_key(device_path: str, prompt: str = "Key: ") -> str | None:
+    """Print key list and return the chosen key name, or None on cancel."""
+    keys = _load_keys(device_path)
+    if not keys:
+        print(f"  No keys in {_short_name(device_path)}.")
+        return None
+
+    key_list = sorted(keys.keys())
+    print()
+    for i, k in enumerate(key_list, 1):
+        print(f"  {i}. {k}")
+
+    try:
+        choice = input(f"\n{prompt}").strip()
+    except (KeyboardInterrupt, EOFError):
+        print()
+        return None
+
+    if choice.isdigit():
+        idx = int(choice)
+        if 1 <= idx <= len(key_list):
+            return key_list[idx - 1]
+        print("Invalid choice.")
+        return None
+    if choice in keys:
+        return choice
+    print(f"Key '{choice}' not found.")
+    return None
+
+
+def _save_keys(device_path: str, keys: dict) -> None:
+    try:
+        with open(device_path, "r") as f:
+            data = json.load(f)
+    except Exception:
+        data = {}
+    data["keys"] = keys
+    with open(device_path, "w") as f:
+        json.dump(data, f, indent=2)
+
+
+def action_edit_key(device_path: str) -> None:
+    """Rename, re-record, or delete a key."""
+    if not device_path:
+        print("[ERROR] No device selected.")
+        return
+
+    keys = _load_keys(device_path)
+    if not keys:
+        print(f"  No keys in {_short_name(device_path)}.")
+        return
+
+    print()
+    print("  1. Rename a key")
+    print("  2. Re-record a key")
+    print("  3. Delete a key")
+
+    try:
+        choice = input("\nChoice: ").strip()
+    except (KeyboardInterrupt, EOFError):
+        print()
+        return
+
+    if choice == "1":
+        key_name = _pick_key(device_path, "Key to rename: ")
+        if not key_name:
+            return
+        try:
+            new_name = input(f"New name for '{key_name}': ").strip()
+        except (KeyboardInterrupt, EOFError):
+            print()
+            return
+        if not new_name:
+            print("Name cannot be empty.")
+            return
+        if new_name in keys:
+            print(f"Key '{new_name}' already exists.")
+            return
+        keys[new_name] = keys.pop(key_name)
+        _save_keys(device_path, keys)
+        print(f"  Renamed '{key_name}' -> '{new_name}'")
+
+    elif choice == "2":
+        key_name = _pick_key(device_path, "Key to re-record: ")
+        if not key_name:
+            return
+        print(f"\nReady to re-record '{key_name}' — point your remote at the pHAT and press the button.")
+        print("Press Enter when ready (or Ctrl-C to cancel)...")
+        try:
+            input()
+        except (KeyboardInterrupt, EOFError):
+            print("\nCancelled.")
+            return
+        cmd = ["piir", "record", "--gpio", str(RX_GPIO), "--file", device_path, key_name]
+        try:
+            result = subprocess.run(cmd, timeout=30)
+            if result.returncode == 0:
+                print(f"  Re-recorded '{key_name}'")
+            else:
+                print(f"  [ERROR] piir exited with code {result.returncode}")
+        except FileNotFoundError:
+            print("[ERROR] 'piir' command not found.")
+        except subprocess.TimeoutExpired:
+            print("[ERROR] Timed out waiting for IR signal (30 s).")
+
+    elif choice == "3":
+        key_name = _pick_key(device_path, "Key to delete: ")
+        if not key_name:
+            return
+        try:
+            confirm = input(f"Delete '{key_name}'? [y/N]: ").strip().lower()
+        except (KeyboardInterrupt, EOFError):
+            print()
+            return
+        if confirm == "y":
+            keys.pop(key_name)
+            _save_keys(device_path, keys)
+            print(f"  Deleted '{key_name}'")
+        else:
+            print("  Cancelled.")
+
+    else:
+        print("Invalid choice.")
+
+
 # ---------------------------------------------------------------------------
 # Main menu
 # ---------------------------------------------------------------------------
@@ -263,7 +388,8 @@ def main() -> None:
         print("  2. Record a key")
         print("  3. Send a key")
         print("  4. List keys")
-        print("  5. Quit")
+        print("  5. Edit a key")
+        print("  6. Quit")
         print()
 
         try:
@@ -284,10 +410,15 @@ def main() -> None:
         elif choice == "4":
             action_list_keys(current_device)
         elif choice == "5":
+            if not current_device:
+                print("Select a device first (option 1).")
+            else:
+                action_edit_key(current_device)
+        elif choice == "6":
             print("Exiting.")
             break
         else:
-            print("Invalid choice, enter 1-5.")
+            print("Invalid choice, enter 1-6.")
 
 
 if __name__ == "__main__":
