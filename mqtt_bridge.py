@@ -3,27 +3,35 @@
 
 Connects to the MQTT broker without credentials (anonymous access).
 Publishes:
-  - ir_remote/devices       retained JSON device+key map (for HA integration)
-  - homeassistant/button/.. MQTT Discovery configs (for native HA MQTT)
-  - ir_remote/availability  online/offline LWT
+  - ir_remote/devices          retained JSON device+key map
+  - homeassistant/button/..    MQTT Discovery configs
+  - ir_remote/availability     online/offline LWT
+  - ir_remote/record/status    recording progress/result
 
 Subscribes to:
-  - ir_remote/<device>/send  payload = key name → fires IR signal
+  - ir_remote/<device>/send    payload = key name → fires IR signal
+  - ir_remote/reload           re-read JSON files and republish
+  - ir_remote/record/start     payload = {"device":..,"key":..} → record key
+  - ir_remote/key/delete       payload = {"device":..,"key":..} → delete key
+  - ir_remote/key/rename       payload = {"device":..,"old":..,"new":..} → rename key
 
 Environment variables:
-    MQTT_HOST   broker hostname/IP  (default: homeassistant.local)
+    MQTT_HOST   broker hostname/IP  (default: pi5.local)
     MQTT_PORT   broker port         (default: 1883)
 """
 
 import glob
 import json
 import os
+import subprocess
 import sys
+import threading
 
 import paho.mqtt.client as mqtt
 import piir  # type: ignore
 
 TX_GPIO = 17
+RX_GPIO = 18
 
 MQTT_HOST = os.getenv("MQTT_HOST", "pi5.local")
 MQTT_PORT = int(os.getenv("MQTT_PORT", "1883"))
@@ -33,6 +41,10 @@ BASE_TOPIC = "ir_remote"
 AVAILABILITY_TOPIC = f"{BASE_TOPIC}/availability"
 DEVICES_TOPIC = f"{BASE_TOPIC}/devices"
 RELOAD_TOPIC = f"{BASE_TOPIC}/reload"
+RECORD_START_TOPIC = f"{BASE_TOPIC}/record/start"
+RECORD_STATUS_TOPIC = f"{BASE_TOPIC}/record/status"
+KEY_DELETE_TOPIC = f"{BASE_TOPIC}/key/delete"
+KEY_RENAME_TOPIC = f"{BASE_TOPIC}/key/rename"
 
 
 # ---------------------------------------------------------------------------
@@ -44,7 +56,6 @@ def _script_dir() -> str:
 
 
 def load_all_devices() -> dict:
-    """Return {device_name: [key, ...]} for every valid *.json in script dir."""
     devices = {}
     for path in sorted(glob.glob(os.path.join(_script_dir(), "*.json"))):
         name = os.path.splitext(os.path.basename(path))[0]
@@ -57,6 +68,19 @@ def load_all_devices() -> dict:
         except Exception as exc:
             print(f"[WARN] Skipping {path}: {exc}")
     return devices
+
+
+def _load_raw(device_path: str) -> dict:
+    try:
+        with open(device_path) as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def _save_raw(device_path: str, data: dict) -> None:
+    with open(device_path, "w") as f:
+        json.dump(data, f, indent=2)
 
 
 # ---------------------------------------------------------------------------
@@ -88,11 +112,93 @@ def publish_discovery(client: mqtt.Client, devices: dict) -> None:
     print(f"[INFO] Discovery published for {len(devices)} device(s).")
 
 
+def _republish_devices(client: mqtt.Client) -> None:
+    devices = load_all_devices()
+    client.publish(DEVICES_TOPIC, json.dumps(devices), retain=True)
+    if devices:
+        publish_discovery(client, devices)
+        for device_name in devices:
+            client.subscribe(f"{BASE_TOPIC}/{device_name}/send")
+    print("[INFO] Device list reloaded.")
+
+
+# ---------------------------------------------------------------------------
+# Key management
+# ---------------------------------------------------------------------------
+
+def _handle_record(client: mqtt.Client, payload: str) -> None:
+    try:
+        data = json.loads(payload)
+        device_name = data["device"]
+        key_name = data["key"]
+    except Exception:
+        client.publish(RECORD_STATUS_TOPIC, json.dumps({"status": "error", "message": "Invalid payload"}))
+        return
+
+    device_path = os.path.join(_script_dir(), f"{device_name}.json")
+
+    def _record():
+        client.publish(RECORD_STATUS_TOPIC, json.dumps({"status": "recording", "key": key_name}))
+        print(f"[INFO] Recording '{key_name}' for '{device_name}'...")
+        cmd = ["piir", "record", "--gpio", str(RX_GPIO), "--file", device_path, key_name]
+        try:
+            result = subprocess.run(cmd, timeout=30)
+            if result.returncode == 0:
+                _republish_devices(client)
+                client.publish(RECORD_STATUS_TOPIC, json.dumps({"status": "done", "key": key_name}))
+                print(f"[INFO] Recorded '{key_name}'")
+            else:
+                client.publish(RECORD_STATUS_TOPIC, json.dumps({"status": "error", "key": key_name}))
+        except subprocess.TimeoutExpired:
+            client.publish(RECORD_STATUS_TOPIC, json.dumps({"status": "timeout", "key": key_name}))
+            print(f"[WARN] Recording timed out for '{key_name}'")
+
+    thread = threading.Thread(target=_record, daemon=True)
+    thread.start()
+
+
+def _handle_delete(client: mqtt.Client, payload: str) -> None:
+    try:
+        data = json.loads(payload)
+        device_name = data["device"]
+        key_name = data["key"]
+    except Exception:
+        return
+
+    device_path = os.path.join(_script_dir(), f"{device_name}.json")
+    raw = _load_raw(device_path)
+    if key_name in raw.get("keys", {}):
+        del raw["keys"][key_name]
+        _save_raw(device_path, raw)
+        _republish_devices(client)
+        print(f"[INFO] Deleted '{key_name}' from '{device_name}'")
+
+
+def _handle_rename(client: mqtt.Client, payload: str) -> None:
+    try:
+        data = json.loads(payload)
+        device_name = data["device"]
+        old_name = data["old"]
+        new_name = data["new"]
+    except Exception:
+        return
+
+    device_path = os.path.join(_script_dir(), f"{device_name}.json")
+    raw = _load_raw(device_path)
+    keys = raw.get("keys", {})
+    if old_name in keys and new_name not in keys:
+        keys[new_name] = keys.pop(old_name)
+        raw["keys"] = keys
+        _save_raw(device_path, raw)
+        _republish_devices(client)
+        print(f"[INFO] Renamed '{old_name}' -> '{new_name}' in '{device_name}'")
+
+
 # ---------------------------------------------------------------------------
 # MQTT callbacks
 # ---------------------------------------------------------------------------
 
-def on_connect(client, userdata, flags, rc, properties=None):
+def on_connect(client, userdata, _flags, rc, _properties=None):
     if rc != 0:
         print(f"[ERROR] MQTT connect failed (rc={rc}). Retrying...")
         return
@@ -103,52 +209,47 @@ def on_connect(client, userdata, flags, rc, properties=None):
     devices = load_all_devices()
     if not devices:
         print("[WARN] No device JSON files found — nothing to publish.")
-        return
+    else:
+        client.publish(DEVICES_TOPIC, json.dumps(devices), retain=True)
+        publish_discovery(client, devices)
+        for device_name in devices:
+            topic = f"{BASE_TOPIC}/{device_name}/send"
+            client.subscribe(topic)
+            print(f"[INFO] Subscribed to {topic}")
 
-    client.publish(DEVICES_TOPIC, json.dumps(devices), retain=True)
-    publish_discovery(client, devices)
-
-    for device_name in devices:
-        topic = f"{BASE_TOPIC}/{device_name}/send"
+    for topic in (RELOAD_TOPIC, RECORD_START_TOPIC, KEY_DELETE_TOPIC, KEY_RENAME_TOPIC):
         client.subscribe(topic)
         print(f"[INFO] Subscribed to {topic}")
 
-    client.subscribe(RELOAD_TOPIC)
-    print(f"[INFO] Subscribed to {RELOAD_TOPIC}")
-
-
-def _republish_devices(client: mqtt.Client) -> None:
-    devices = load_all_devices()
-    if not devices:
-        print("[WARN] No device JSON files found.")
-        return
-    client.publish(DEVICES_TOPIC, json.dumps(devices), retain=True)
-    publish_discovery(client, devices)
-    for device_name in devices:
-        client.subscribe(f"{BASE_TOPIC}/{device_name}/send")
-    print("[INFO] Device list reloaded.")
-
 
 def on_message(client, userdata, msg):
-    if msg.topic == RELOAD_TOPIC:
+    topic = msg.topic
+    payload = msg.payload.decode().strip()
+
+    if topic == RELOAD_TOPIC:
         print("[INFO] Reload requested.")
         _republish_devices(client)
-        return
 
-    parts = msg.topic.split("/")
-    if len(parts) != 3:
-        return
+    elif topic == RECORD_START_TOPIC:
+        _handle_record(client, payload)
 
-    device_name = parts[1]
-    key = msg.payload.decode().strip()
-    device_path = os.path.join(_script_dir(), f"{device_name}.json")
+    elif topic == KEY_DELETE_TOPIC:
+        _handle_delete(client, payload)
 
-    try:
-        remote = piir.Remote(device_path, TX_GPIO)
-        remote.send(key)
-        print(f"[INFO] Sent: {device_name}/{key}")
-    except Exception as exc:
-        print(f"[ERROR] Failed to send {device_name}/{key}: {exc}")
+    elif topic == KEY_RENAME_TOPIC:
+        _handle_rename(client, payload)
+
+    else:
+        parts = topic.split("/")
+        if len(parts) == 3:
+            device_name = parts[1]
+            device_path = os.path.join(_script_dir(), f"{device_name}.json")
+            try:
+                remote = piir.Remote(device_path, TX_GPIO)
+                remote.send(payload)
+                print(f"[INFO] Sent: {device_name}/{payload}")
+            except Exception as exc:
+                print(f"[ERROR] Failed to send {device_name}/{payload}: {exc}")
 
 
 def on_disconnect(client, userdata, rc, properties=None, reasoncode=None):
