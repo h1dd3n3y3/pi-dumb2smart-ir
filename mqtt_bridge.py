@@ -155,9 +155,11 @@ def _handle_record(client: mqtt.Client, payload: str) -> None:
     def _record():
         client.publish(RECORD_STATUS_TOPIC, json.dumps({"status": "recording", "key": key_name}))
         print(f"[INFO] Recording '{key_name}' for '{device_name}'...")
-        cmd = [sys.executable, "-m", "piir", "record", "--gpio", str(RX_GPIO), "--file", device_path, key_name]
+        cmd = ["piir", "record", "--gpio", str(RX_GPIO), "--file", device_path, key_name]
+        env = os.environ.copy()
+        env["PATH"] = os.path.expanduser("~/.local/bin") + ":" + env.get("PATH", "")
         try:
-            result = subprocess.run(cmd, timeout=30)
+            result = subprocess.run(cmd, timeout=30, env=env)
             if result.returncode == 0:
                 _republish_devices(client)
                 client.publish(RECORD_STATUS_TOPIC, json.dumps({"status": "done", "key": key_name}))
