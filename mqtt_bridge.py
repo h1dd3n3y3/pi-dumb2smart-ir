@@ -25,7 +25,7 @@ import piir  # type: ignore
 
 TX_GPIO = 17
 
-MQTT_HOST = os.getenv("MQTT_HOST", "homeassistant.local")
+MQTT_HOST = os.getenv("MQTT_HOST", "pi5.local")
 MQTT_PORT = int(os.getenv("MQTT_PORT", "1883"))
 
 DISCOVERY_PREFIX = "homeassistant"
