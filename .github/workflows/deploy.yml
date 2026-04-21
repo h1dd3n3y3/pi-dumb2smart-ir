@@ -18,5 +18,5 @@ jobs:
       - name: Update HA integration on pi5
         run: |
           cd ~/pi-dumb2smart-ir && git pull
-          cp -r custom_components/ir_remote ~/home-assistant/config/custom_components/
+          sudo cp -r custom_components/ir_remote ~/home-assistant/config/custom_components/
           cd ~/home-assistant && docker compose restart
