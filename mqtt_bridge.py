@@ -155,7 +155,7 @@ def _handle_record(client: mqtt.Client, payload: str) -> None:
     def _record():
         client.publish(RECORD_STATUS_TOPIC, json.dumps({"status": "recording", "key": key_name}))
         print(f"[INFO] Recording '{key_name}' for '{device_name}'...")
-        cmd = ["piir", "record", "--gpio", str(RX_GPIO), "--file", device_path, key_name]
+        cmd = [sys.executable, "-m", "piir", "record", "--gpio", str(RX_GPIO), "--file", device_path, key_name]
         try:
             result = subprocess.run(cmd, timeout=30)
             if result.returncode == 0:
@@ -167,6 +167,9 @@ def _handle_record(client: mqtt.Client, payload: str) -> None:
         except subprocess.TimeoutExpired:
             client.publish(RECORD_STATUS_TOPIC, json.dumps({"status": "timeout", "key": key_name}))
             print(f"[WARN] Recording timed out for '{key_name}'")
+        except Exception as exc:
+            client.publish(RECORD_STATUS_TOPIC, json.dumps({"status": "error", "key": key_name}))
+            print(f"[ERROR] Recording failed for '{key_name}': {exc}")
 
     thread = threading.Thread(target=_record, daemon=True)
     thread.start()
