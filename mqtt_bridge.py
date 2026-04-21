@@ -32,6 +32,7 @@ DISCOVERY_PREFIX = "homeassistant"
 BASE_TOPIC = "ir_remote"
 AVAILABILITY_TOPIC = f"{BASE_TOPIC}/availability"
 DEVICES_TOPIC = f"{BASE_TOPIC}/devices"
+RELOAD_TOPIC = f"{BASE_TOPIC}/reload"
 
 
 # ---------------------------------------------------------------------------
@@ -112,8 +113,28 @@ def on_connect(client, userdata, flags, rc, properties=None):
         client.subscribe(topic)
         print(f"[INFO] Subscribed to {topic}")
 
+    client.subscribe(RELOAD_TOPIC)
+    print(f"[INFO] Subscribed to {RELOAD_TOPIC}")
+
+
+def _republish_devices(client: mqtt.Client) -> None:
+    devices = load_all_devices()
+    if not devices:
+        print("[WARN] No device JSON files found.")
+        return
+    client.publish(DEVICES_TOPIC, json.dumps(devices), retain=True)
+    publish_discovery(client, devices)
+    for device_name in devices:
+        client.subscribe(f"{BASE_TOPIC}/{device_name}/send")
+    print("[INFO] Device list reloaded.")
+
 
 def on_message(client, userdata, msg):
+    if msg.topic == RELOAD_TOPIC:
+        print("[INFO] Reload requested.")
+        _republish_devices(client)
+        return
+
     parts = msg.topic.split("/")
     if len(parts) != 3:
         return

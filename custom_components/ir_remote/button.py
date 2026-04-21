@@ -39,6 +39,25 @@ async def async_setup_entry(
             async_add_entities(new_entities)
 
     await mqtt.async_subscribe(hass, f"{prefix}/devices", handle_devices)
+    async_add_entities([ReloadButton(hass, prefix)])
+
+
+class ReloadButton(ButtonEntity):
+    def __init__(self, hass: HomeAssistant, prefix: str) -> None:
+        self.hass = hass
+        self._prefix = prefix
+        self._attr_name = "Reload Devices"
+        self._attr_unique_id = f"ir_remote_{prefix}_reload"
+        self._attr_icon = "mdi:reload"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, f"ir_{prefix}_bridge")},
+            name="IR Bridge",
+            model="ANAVI IR pHAT",
+            manufacturer="ANAVI",
+        )
+
+    async def async_press(self) -> None:
+        await mqtt.async_publish(self.hass, f"{self._prefix}/reload", "1")
 
 
 class IRRemoteButton(ButtonEntity):
