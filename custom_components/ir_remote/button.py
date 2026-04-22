@@ -33,6 +33,7 @@ async def async_setup_entry(
         for device_name, keys in devices.items():
             valid_unique_ids.add(f"ir_remote_{device_name}_learn")
             valid_unique_ids.add(f"ir_remote_{device_name}_delete")
+            valid_unique_ids.add(f"ir_remote_{device_name}_rename")
             for key in keys:
                 valid_unique_ids.add(f"ir_remote_{device_name}_{key}")
 
@@ -49,6 +50,7 @@ async def async_setup_entry(
                 added.add(learn_uid)
                 new_entities.append(LearnButton(hass, prefix, device_name))
                 new_entities.append(DeleteButton(hass, prefix, device_name))
+                new_entities.append(RenameButton(hass, prefix, device_name))
             for key in keys:
                 uid = f"{device_name}_{key}"
                 if uid not in added:
@@ -136,6 +138,40 @@ class DeleteButton(ButtonEntity):
         )
         if text_entity:
             text_entity.clear()
+
+
+class RenameButton(ButtonEntity):
+    def __init__(self, hass: HomeAssistant, prefix: str, device_name: str) -> None:
+        self.hass = hass
+        self._prefix = prefix
+        self._device = device_name
+        self._attr_name = f"{device_name.replace('_', ' ').title()} Rename Key"
+        self._attr_unique_id = f"ir_remote_{device_name}_rename"
+        self._attr_entity_category = EntityCategory.CONFIG
+        self._attr_icon = "mdi:rename-box"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, f"ir_{device_name}")},
+            name=device_name.replace("_", " ").title(),
+            model="ANAVI IR pHAT",
+            manufacturer="ANAVI",
+        )
+
+    async def async_press(self) -> None:
+        old_text = self.hass.data[DOMAIN].get("key_name_texts", {}).get(self._device)
+        new_text = self.hass.data[DOMAIN].get("new_key_name_texts", {}).get(self._device)
+        old_name = (old_text._attr_native_value or "").strip() if old_text else ""
+        new_name = (new_text._attr_native_value or "").strip() if new_text else ""
+        if not old_name or not new_name:
+            return
+        await mqtt.async_publish(
+            self.hass,
+            f"{self._prefix}/key/rename",
+            json.dumps({"device": self._device, "old": old_name, "new": new_name}),
+        )
+        if old_text:
+            old_text.clear()
+        if new_text:
+            new_text.clear()
 
 
 class IRRemoteButton(ButtonEntity):

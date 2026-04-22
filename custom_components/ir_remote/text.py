@@ -19,6 +19,7 @@ async def async_setup_entry(
     added = set()
 
     hass.data[DOMAIN].setdefault("key_name_texts", {})
+    hass.data[DOMAIN].setdefault("new_key_name_texts", {})
 
     @callback
     def handle_devices(msg):
@@ -34,6 +35,9 @@ async def async_setup_entry(
                 entity = KeyNameText(device_name)
                 hass.data[DOMAIN]["key_name_texts"][device_name] = entity
                 new_entities.append(entity)
+                new_entity = NewKeyNameText(device_name)
+                hass.data[DOMAIN]["new_key_name_texts"][device_name] = new_entity
+                new_entities.append(new_entity)
 
         if new_entities:
             async_add_entities(new_entities)
@@ -51,6 +55,33 @@ class KeyNameText(TextEntity):
         self._attr_available = True
         self._attr_entity_category = EntityCategory.CONFIG
         self._attr_icon = "mdi:keyboard"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, f"ir_{device_name}")},
+            name=device_name.replace("_", " ").title(),
+            model="ANAVI IR pHAT",
+            manufacturer="ANAVI",
+        )
+
+    async def async_set_value(self, value: str) -> None:
+        self._attr_native_value = value
+        self.async_write_ha_state()
+
+    @callback
+    def clear(self) -> None:
+        self._attr_native_value = ""
+        self.async_write_ha_state()
+
+
+class NewKeyNameText(TextEntity):
+    def __init__(self, device_name: str) -> None:
+        self._attr_name = f"{device_name.replace('_', ' ').title()} New Key Name"
+        self._attr_unique_id = f"ir_remote_{device_name}_new_key_name"
+        self._attr_native_value = ""
+        self._attr_native_min = 0
+        self._attr_native_max = 64
+        self._attr_available = True
+        self._attr_entity_category = EntityCategory.CONFIG
+        self._attr_icon = "mdi:form-textbox"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, f"ir_{device_name}")},
             name=device_name.replace("_", " ").title(),
