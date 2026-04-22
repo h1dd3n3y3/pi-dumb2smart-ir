@@ -105,7 +105,7 @@ class CreateDeviceButton(ButtonEntity):
         self._attr_name = "Save Remote"
         self._attr_unique_id = f"ir_remote_{prefix}_save_remote"
         self._attr_entity_category = EntityCategory.CONFIG
-        self._attr_icon = "mdi:plus-box"
+        self._attr_icon = "mdi:content-save"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, f"ir_{prefix}_bridge")},
             name="IR Bridge",

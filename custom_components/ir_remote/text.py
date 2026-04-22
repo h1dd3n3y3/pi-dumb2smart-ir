@@ -67,7 +67,7 @@ class NewDeviceNameText(TextEntity):
         self._attr_native_max = 64
         self._attr_available = True
         self._attr_entity_category = EntityCategory.CONFIG
-        self._attr_icon = "mdi:remote-tv-off"
+        self._attr_icon = "mdi:remote-tv"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, f"ir_{prefix}_bridge")},
             name="IR Bridge",
