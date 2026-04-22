@@ -106,7 +106,7 @@ class CreateDeviceButton(ButtonEntity):
         self.hass = hass
         self._prefix = prefix
         self._entry_id = entry_id
-        self._attr_name = "Save Remote"
+        self._attr_name = "Register Remote"
         self._attr_unique_id = f"ir_remote_{prefix}_save_remote"
         self._attr_entity_category = EntityCategory.CONFIG
         self._attr_icon = "mdi:content-save"
