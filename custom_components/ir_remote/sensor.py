@@ -25,7 +25,7 @@ async def async_setup_entry(
             data = json.loads(msg.payload)
             status = data.get("status", "idle")
             sensor.set_status(status, data.get("key", ""))
-            if status in ("done", "error", "timeout"):
+            if status == "done":
                 for text_entity in hass.data[DOMAIN][entry.entry_id]["key_name_texts"].values():
                     text_entity.clear()
         except Exception:
