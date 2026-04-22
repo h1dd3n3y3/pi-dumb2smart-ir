@@ -155,6 +155,12 @@ def _handle_record(client: mqtt.Client, payload: str) -> None:
 
     device_path = os.path.join(_script_dir(), f"{device_name}.json")
 
+    # For new devices with no keys, remove the placeholder so piir auto-detects protocol
+    raw = _load_raw(device_path)
+    is_new_device = not raw.get("keys")
+    if is_new_device and os.path.exists(device_path):
+        os.remove(device_path)
+
     def _record():
         client.publish(RECORD_STATUS_TOPIC, json.dumps({"status": "recording", "key": key_name}))
         print(f"[INFO] Recording '{key_name}' for '{device_name}'...")
@@ -168,11 +174,17 @@ def _handle_record(client: mqtt.Client, payload: str) -> None:
                 client.publish(RECORD_STATUS_TOPIC, json.dumps({"status": "done", "key": key_name}))
                 print(f"[INFO] Recorded '{key_name}'")
             else:
+                if is_new_device and not os.path.exists(device_path):
+                    _save_raw(device_path, {"keys": {}})
                 client.publish(RECORD_STATUS_TOPIC, json.dumps({"status": "error", "key": key_name}))
         except subprocess.TimeoutExpired:
+            if is_new_device and not os.path.exists(device_path):
+                _save_raw(device_path, {"keys": {}})
             client.publish(RECORD_STATUS_TOPIC, json.dumps({"status": "timeout", "key": key_name}))
             print(f"[WARN] Recording timed out for '{key_name}'")
         except Exception as exc:
+            if is_new_device and not os.path.exists(device_path):
+                _save_raw(device_path, {"keys": {}})
             client.publish(RECORD_STATUS_TOPIC, json.dumps({"status": "error", "key": key_name}))
             print(f"[ERROR] Recording failed for '{key_name}': {exc}")
 
