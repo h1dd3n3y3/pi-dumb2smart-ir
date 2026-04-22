@@ -18,9 +18,7 @@ async def async_setup_entry(
 ) -> None:
     prefix = entry.data.get(CONF_TOPIC_PREFIX, DEFAULT_TOPIC_PREFIX)
     added = set()
-
-    hass.data[DOMAIN].setdefault("key_name_texts", {})
-    hass.data[DOMAIN].setdefault("rename_target_texts", {})
+    entry_data = hass.data[DOMAIN][entry.entry_id]
 
     @callback
     def handle_devices(msg):
@@ -31,8 +29,8 @@ async def async_setup_entry(
 
         valid_unique_ids: set[str] = set()
         for device_name in devices:
-            valid_unique_ids.add(f"ir_remote_{device_name}_key_name")
-            valid_unique_ids.add(f"ir_remote_{device_name}_rename_to")
+            valid_unique_ids.add(f"ir_remote_{prefix}_{device_name}_key_name")
+            valid_unique_ids.add(f"ir_remote_{prefix}_{device_name}_rename_to")
 
         registry = er.async_get(hass)
         for entry_item in er.async_entries_for_config_entry(registry, entry.entry_id):
@@ -43,11 +41,11 @@ async def async_setup_entry(
         for device_name in devices:
             if device_name not in added:
                 added.add(device_name)
-                key_entity = KeyNameText(device_name)
-                hass.data[DOMAIN]["key_name_texts"][device_name] = key_entity
+                key_entity = KeyNameText(prefix, device_name)
+                entry_data["key_name_texts"][device_name] = key_entity
                 new_entities.append(key_entity)
-                rename_entity = RenameTargetText(device_name)
-                hass.data[DOMAIN]["rename_target_texts"][device_name] = rename_entity
+                rename_entity = RenameTargetText(prefix, device_name)
+                entry_data["rename_target_texts"][device_name] = rename_entity
                 new_entities.append(rename_entity)
 
         if new_entities:
@@ -57,9 +55,9 @@ async def async_setup_entry(
 
 
 class KeyNameText(TextEntity):
-    def __init__(self, device_name: str) -> None:
+    def __init__(self, prefix: str, device_name: str) -> None:
         self._attr_name = f"{device_name.replace('_', ' ').title()} Key Name"
-        self._attr_unique_id = f"ir_remote_{device_name}_key_name"
+        self._attr_unique_id = f"ir_remote_{prefix}_{device_name}_key_name"
         self._attr_native_value = ""
         self._attr_native_min = 0
         self._attr_native_max = 64
@@ -67,7 +65,7 @@ class KeyNameText(TextEntity):
         self._attr_entity_category = EntityCategory.CONFIG
         self._attr_icon = "mdi:alpha-a-box-outline"
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, f"ir_{device_name}")},
+            identifiers={(DOMAIN, f"ir_{prefix}_{device_name}")},
             name=device_name.replace("_", " ").title(),
             model="ANAVI IR pHAT",
             manufacturer="ANAVI",
@@ -84,9 +82,9 @@ class KeyNameText(TextEntity):
 
 
 class RenameTargetText(TextEntity):
-    def __init__(self, device_name: str) -> None:
+    def __init__(self, prefix: str, device_name: str) -> None:
         self._attr_name = f"{device_name.replace('_', ' ').title()} New Key Name"
-        self._attr_unique_id = f"ir_remote_{device_name}_rename_to"
+        self._attr_unique_id = f"ir_remote_{prefix}_{device_name}_rename_to"
         self._attr_native_value = ""
         self._attr_native_min = 0
         self._attr_native_max = 64
@@ -94,7 +92,7 @@ class RenameTargetText(TextEntity):
         self._attr_entity_category = EntityCategory.CONFIG
         self._attr_icon = "mdi:form-textbox"
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, f"ir_{device_name}")},
+            identifiers={(DOMAIN, f"ir_{prefix}_{device_name}")},
             name=device_name.replace("_", " ").title(),
             model="ANAVI IR pHAT",
             manufacturer="ANAVI",

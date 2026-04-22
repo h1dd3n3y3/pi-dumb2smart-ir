@@ -28,29 +28,27 @@ async def async_setup_entry(
 
         new_entities = []
 
-        # Build the full set of unique_ids that should exist
         valid_unique_ids: set[str] = {f"ir_remote_{prefix}_reload"}
         for device_name, keys in devices.items():
-            valid_unique_ids.add(f"ir_remote_{device_name}_learn")
-            valid_unique_ids.add(f"ir_remote_{device_name}_delete")
-            valid_unique_ids.add(f"ir_remote_{device_name}_rename")
+            valid_unique_ids.add(f"ir_remote_{prefix}_{device_name}_learn")
+            valid_unique_ids.add(f"ir_remote_{prefix}_{device_name}_delete")
+            valid_unique_ids.add(f"ir_remote_{prefix}_{device_name}_rename")
             for key in keys:
-                valid_unique_ids.add(f"ir_remote_{device_name}_{key}")
+                valid_unique_ids.add(f"ir_remote_{prefix}_{device_name}_{key}")
 
-        # Remove any registered button entity no longer in the valid set
         registry = er.async_get(hass)
         for entry_item in er.async_entries_for_config_entry(registry, entry.entry_id):
             if entry_item.domain == "button" and entry_item.unique_id not in valid_unique_ids:
                 registry.async_remove(entry_item.entity_id)
-                added.discard(entry_item.unique_id.removeprefix("ir_remote_"))
+                added.discard(entry_item.unique_id.removeprefix(f"ir_remote_{prefix}_"))
 
         for device_name, keys in devices.items():
             learn_uid = f"{device_name}_learn"
             if learn_uid not in added:
                 added.add(learn_uid)
-                new_entities.append(LearnButton(hass, prefix, device_name))
-                new_entities.append(DeleteButton(hass, prefix, device_name))
-                new_entities.append(RenameButton(hass, prefix, device_name))
+                new_entities.append(LearnButton(hass, prefix, device_name, entry.entry_id))
+                new_entities.append(DeleteButton(hass, prefix, device_name, entry.entry_id))
+                new_entities.append(RenameButton(hass, prefix, device_name, entry.entry_id))
             for key in keys:
                 uid = f"{device_name}_{key}"
                 if uid not in added:
@@ -83,23 +81,24 @@ class ReloadButton(ButtonEntity):
 
 
 class LearnButton(ButtonEntity):
-    def __init__(self, hass: HomeAssistant, prefix: str, device_name: str) -> None:
+    def __init__(self, hass: HomeAssistant, prefix: str, device_name: str, entry_id: str) -> None:
         self.hass = hass
         self._prefix = prefix
         self._device = device_name
+        self._entry_id = entry_id
         self._attr_name = f"{device_name.replace('_', ' ').title()} Learn Key"
-        self._attr_unique_id = f"ir_remote_{device_name}_learn"
+        self._attr_unique_id = f"ir_remote_{prefix}_{device_name}_learn"
         self._attr_entity_category = EntityCategory.CONFIG
         self._attr_icon = "mdi:record-circle"
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, f"ir_{device_name}")},
+            identifiers={(DOMAIN, f"ir_{prefix}_{device_name}")},
             name=device_name.replace("_", " ").title(),
             model="ANAVI IR pHAT",
             manufacturer="ANAVI",
         )
 
     async def async_press(self) -> None:
-        text_entity = self.hass.data[DOMAIN].get("key_name_texts", {}).get(self._device)
+        text_entity = self.hass.data[DOMAIN][self._entry_id]["key_name_texts"].get(self._device)
         key_name = (text_entity._attr_native_value or "").strip() if text_entity else ""
         if not key_name:
             return
@@ -111,23 +110,24 @@ class LearnButton(ButtonEntity):
 
 
 class DeleteButton(ButtonEntity):
-    def __init__(self, hass: HomeAssistant, prefix: str, device_name: str) -> None:
+    def __init__(self, hass: HomeAssistant, prefix: str, device_name: str, entry_id: str) -> None:
         self.hass = hass
         self._prefix = prefix
         self._device = device_name
+        self._entry_id = entry_id
         self._attr_name = f"{device_name.replace('_', ' ').title()} Delete Key"
-        self._attr_unique_id = f"ir_remote_{device_name}_delete"
+        self._attr_unique_id = f"ir_remote_{prefix}_{device_name}_delete"
         self._attr_entity_category = EntityCategory.CONFIG
         self._attr_icon = "mdi:trash-can-outline"
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, f"ir_{device_name}")},
+            identifiers={(DOMAIN, f"ir_{prefix}_{device_name}")},
             name=device_name.replace("_", " ").title(),
             model="ANAVI IR pHAT",
             manufacturer="ANAVI",
         )
 
     async def async_press(self) -> None:
-        text_entity = self.hass.data[DOMAIN].get("key_name_texts", {}).get(self._device)
+        text_entity = self.hass.data[DOMAIN][self._entry_id]["key_name_texts"].get(self._device)
         key_name = (text_entity._attr_native_value or "").strip() if text_entity else ""
         if not key_name:
             return
@@ -141,24 +141,26 @@ class DeleteButton(ButtonEntity):
 
 
 class RenameButton(ButtonEntity):
-    def __init__(self, hass: HomeAssistant, prefix: str, device_name: str) -> None:
+    def __init__(self, hass: HomeAssistant, prefix: str, device_name: str, entry_id: str) -> None:
         self.hass = hass
         self._prefix = prefix
         self._device = device_name
+        self._entry_id = entry_id
         self._attr_name = f"{device_name.replace('_', ' ').title()} Rename Key"
-        self._attr_unique_id = f"ir_remote_{device_name}_rename"
+        self._attr_unique_id = f"ir_remote_{prefix}_{device_name}_rename"
         self._attr_entity_category = EntityCategory.CONFIG
         self._attr_icon = "mdi:rename-box"
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, f"ir_{device_name}")},
+            identifiers={(DOMAIN, f"ir_{prefix}_{device_name}")},
             name=device_name.replace("_", " ").title(),
             model="ANAVI IR pHAT",
             manufacturer="ANAVI",
         )
 
     async def async_press(self) -> None:
-        old_text = self.hass.data[DOMAIN].get("key_name_texts", {}).get(self._device)
-        new_text = self.hass.data[DOMAIN].get("rename_target_texts", {}).get(self._device)
+        entry_data = self.hass.data[DOMAIN][self._entry_id]
+        old_text = entry_data["key_name_texts"].get(self._device)
+        new_text = entry_data["rename_target_texts"].get(self._device)
         old_name = (old_text._attr_native_value or "").strip() if old_text else ""
         new_name = (new_text._attr_native_value or "").strip() if new_text else ""
         if not old_name or not new_name:
@@ -187,9 +189,9 @@ class IRRemoteButton(ButtonEntity):
         self._device = device_name
         self._key = key
         self._attr_name = f"{device_name} {key}".replace("_", " ").title()
-        self._attr_unique_id = f"ir_remote_{device_name}_{key}"
+        self._attr_unique_id = f"ir_remote_{prefix}_{device_name}_{key}"
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, f"ir_{device_name}")},
+            identifiers={(DOMAIN, f"ir_{prefix}_{device_name}")},
             name=device_name.replace("_", " ").title(),
             model="ANAVI IR pHAT",
             manufacturer="ANAVI",
