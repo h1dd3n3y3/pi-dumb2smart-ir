@@ -4,7 +4,7 @@ from homeassistant.components import mqtt
 from homeassistant.components.button import ButtonEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import CONF_TOPIC_PREFIX, DEFAULT_TOPIC_PREFIX, DOMAIN
@@ -69,8 +69,9 @@ class LearnButton(ButtonEntity):
         self.hass = hass
         self._prefix = prefix
         self._device = device_name
-        self._attr_name = f"{device_name.replace('_', ' ').title()} ω Learn Key"
+        self._attr_name = f"{device_name.replace('_', ' ').title()} Learn Key"
         self._attr_unique_id = f"ir_remote_{device_name}_learn"
+        self._attr_entity_category = EntityCategory.CONFIG
         self._attr_icon = "mdi:record-circle"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, f"ir_{device_name}")},
