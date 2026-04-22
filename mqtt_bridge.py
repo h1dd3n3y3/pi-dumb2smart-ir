@@ -14,6 +14,7 @@ Subscribes to:
   - ir_remote/record/start     payload = {"device":..,"key":..} → record key
   - ir_remote/key/delete       payload = {"device":..,"key":..} → delete key
   - ir_remote/key/rename       payload = {"device":..,"old":..,"new":..} → rename key
+  - ir_remote/device/create    payload = {"device":..} → create new device JSON
 
 Environment variables:
     MQTT_HOST   broker hostname/IP  (default: pi5.local)
@@ -45,6 +46,7 @@ RECORD_START_TOPIC = f"{BASE_TOPIC}/record/start"
 RECORD_STATUS_TOPIC = f"{BASE_TOPIC}/record/status"
 KEY_DELETE_TOPIC = f"{BASE_TOPIC}/key/delete"
 KEY_RENAME_TOPIC = f"{BASE_TOPIC}/key/rename"
+DEVICE_CREATE_TOPIC = f"{BASE_TOPIC}/device/create"
 
 _remotes: dict = {}
 
@@ -65,8 +67,7 @@ def load_all_devices() -> dict:
             with open(path) as f:
                 data = json.load(f)
             keys = list(data.get("keys", {}).keys())
-            if keys:
-                devices[name] = keys
+            devices[name] = keys
         except Exception as exc:
             print(f"[WARN] Skipping {path}: {exc}")
     return devices
@@ -117,7 +118,9 @@ def publish_discovery(client: mqtt.Client, devices: dict) -> None:
 def _build_remotes(devices: dict) -> None:
     global _remotes
     _remotes = {}
-    for device_name in devices:
+    for device_name, keys in devices.items():
+        if not keys:
+            continue
         device_path = os.path.join(_script_dir(), f"{device_name}.json")
         try:
             _remotes[device_name] = piir.Remote(device_path, TX_GPIO)
@@ -219,6 +222,26 @@ def _handle_rename(client: mqtt.Client, payload: str) -> None:
         print(f"[INFO] Renamed '{old_name}' -> '{new_name}' in '{device_name}'")
 
 
+def _handle_create_device(client: mqtt.Client, payload: str) -> None:
+    try:
+        data = json.loads(payload)
+        device_name = data["device"].strip().lower().replace(" ", "_")
+    except Exception:
+        return
+
+    if not device_name:
+        return
+
+    device_path = os.path.join(_script_dir(), f"{device_name}.json")
+    if os.path.exists(device_path):
+        print(f"[INFO] Device '{device_name}' already exists, skipping")
+        return
+
+    _save_raw(device_path, {"keys": {}})
+    _republish_devices(client)
+    print(f"[INFO] Created device '{device_name}'")
+
+
 # ---------------------------------------------------------------------------
 # MQTT callbacks
 # ---------------------------------------------------------------------------
@@ -243,7 +266,7 @@ def on_connect(client, userdata, _flags, rc, _properties=None):
             client.subscribe(topic)
             print(f"[INFO] Subscribed to {topic}")
 
-    for topic in (RELOAD_TOPIC, RECORD_START_TOPIC, KEY_DELETE_TOPIC, KEY_RENAME_TOPIC):
+    for topic in (RELOAD_TOPIC, RECORD_START_TOPIC, KEY_DELETE_TOPIC, KEY_RENAME_TOPIC, DEVICE_CREATE_TOPIC):
         client.subscribe(topic)
         print(f"[INFO] Subscribed to {topic}")
 
@@ -264,6 +287,9 @@ def on_message(client, userdata, msg):
 
     elif topic == KEY_RENAME_TOPIC:
         _handle_rename(client, payload)
+
+    elif topic == DEVICE_CREATE_TOPIC:
+        _handle_create_device(client, payload)
 
     else:
         parts = topic.split("/")

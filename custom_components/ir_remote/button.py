@@ -4,6 +4,7 @@ from homeassistant.components import mqtt
 from homeassistant.components.button import ButtonEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -28,7 +29,10 @@ async def async_setup_entry(
 
         new_entities = []
 
-        valid_unique_ids: set[str] = {f"ir_remote_{prefix}_reload"}
+        valid_unique_ids: set[str] = {
+            f"ir_remote_{prefix}_reload",
+            f"ir_remote_{prefix}_save_remote",
+        }
         for device_name, keys in devices.items():
             valid_unique_ids.add(f"ir_remote_{prefix}_{device_name}_learn")
             valid_unique_ids.add(f"ir_remote_{prefix}_{device_name}_delete")
@@ -41,6 +45,16 @@ async def async_setup_entry(
             if entry_item.domain == "button" and entry_item.unique_id not in valid_unique_ids:
                 registry.async_remove(entry_item.entity_id)
                 added.discard(entry_item.unique_id.removeprefix(f"ir_remote_{prefix}_"))
+
+        valid_device_ids = {f"ir_{prefix}_{device_name}" for device_name in devices}
+        valid_device_ids.add(f"ir_{prefix}_bridge")
+        device_reg = dr.async_get(hass)
+        for device_entry in dr.async_entries_for_config_entry(device_reg, entry.entry_id):
+            identifier = next(
+                (id_ for dom, id_ in device_entry.identifiers if dom == DOMAIN), None
+            )
+            if identifier and identifier not in valid_device_ids:
+                device_reg.async_remove_device(device_entry.id)
 
         for device_name, keys in devices.items():
             learn_uid = f"{device_name}_learn"
@@ -59,7 +73,10 @@ async def async_setup_entry(
             async_add_entities(new_entities)
 
     await mqtt.async_subscribe(hass, f"{prefix}/devices", handle_devices)
-    async_add_entities([ReloadButton(hass, prefix)])
+    async_add_entities([
+        ReloadButton(hass, prefix),
+        CreateDeviceButton(hass, prefix, entry.entry_id),
+    ])
 
 
 class ReloadButton(ButtonEntity):
@@ -78,6 +95,36 @@ class ReloadButton(ButtonEntity):
 
     async def async_press(self) -> None:
         await mqtt.async_publish(self.hass, f"{self._prefix}/reload", "1")
+
+
+class CreateDeviceButton(ButtonEntity):
+    def __init__(self, hass: HomeAssistant, prefix: str, entry_id: str) -> None:
+        self.hass = hass
+        self._prefix = prefix
+        self._entry_id = entry_id
+        self._attr_name = "Save Remote"
+        self._attr_unique_id = f"ir_remote_{prefix}_save_remote"
+        self._attr_entity_category = EntityCategory.CONFIG
+        self._attr_icon = "mdi:plus-box"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, f"ir_{prefix}_bridge")},
+            name="IR Bridge",
+            model="ANAVI IR pHAT",
+            manufacturer="ANAVI",
+        )
+
+    async def async_press(self) -> None:
+        text_entity = self.hass.data[DOMAIN][self._entry_id].get("new_device_name_text")
+        name = (text_entity._attr_native_value or "").strip() if text_entity else ""
+        if not name:
+            return
+        await mqtt.async_publish(
+            self.hass,
+            f"{self._prefix}/device/create",
+            json.dumps({"device": name}),
+        )
+        if text_entity:
+            text_entity.clear()
 
 
 class LearnButton(ButtonEntity):
