@@ -18,7 +18,6 @@ async def async_setup_entry(
 ) -> None:
     prefix = entry.data.get(CONF_TOPIC_PREFIX, DEFAULT_TOPIC_PREFIX)
     added: set[str] = set()
-    ir_buttons: dict[str, IRRemoteButton] = {}
 
     @callback
     def handle_devices(msg):
@@ -28,7 +27,21 @@ async def async_setup_entry(
             return
 
         new_entities = []
-        current_key_uids: set[str] = set()
+
+        # Build the full set of unique_ids that should exist
+        valid_unique_ids: set[str] = {f"ir_remote_{prefix}_reload"}
+        for device_name, keys in devices.items():
+            valid_unique_ids.add(f"ir_remote_{device_name}_learn")
+            valid_unique_ids.add(f"ir_remote_{device_name}_delete")
+            for key in keys:
+                valid_unique_ids.add(f"ir_remote_{device_name}_{key}")
+
+        # Remove any registered button entity no longer in the valid set
+        registry = er.async_get(hass)
+        for entry_item in er.async_entries_for_config_entry(registry, entry.entry_id):
+            if entry_item.domain == "button" and entry_item.unique_id not in valid_unique_ids:
+                registry.async_remove(entry_item.entity_id)
+                added.discard(entry_item.unique_id.removeprefix("ir_remote_"))
 
         for device_name, keys in devices.items():
             learn_uid = f"{device_name}_learn"
@@ -38,22 +51,9 @@ async def async_setup_entry(
                 new_entities.append(DeleteButton(hass, prefix, device_name))
             for key in keys:
                 uid = f"{device_name}_{key}"
-                current_key_uids.add(uid)
                 if uid not in added:
                     added.add(uid)
-                    btn = IRRemoteButton(hass, prefix, device_name, key)
-                    ir_buttons[uid] = btn
-                    new_entities.append(btn)
-
-        # Remove button entities for keys that no longer exist
-        registry = er.async_get(hass)
-        for uid in list(ir_buttons):
-            if uid not in current_key_uids:
-                entity = ir_buttons.pop(uid)
-                added.discard(uid)
-                entity_id = registry.async_get_entity_id("button", DOMAIN, entity._attr_unique_id)
-                if entity_id:
-                    registry.async_remove(entity_id)
+                    new_entities.append(IRRemoteButton(hass, prefix, device_name, key))
 
         if new_entities:
             async_add_entities(new_entities)
