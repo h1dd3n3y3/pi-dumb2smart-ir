@@ -115,7 +115,7 @@ class DeleteButton(ButtonEntity):
         self.hass = hass
         self._prefix = prefix
         self._device = device_name
-        self._attr_name = f"{device_name.replace('_', ' ').title()} Remove Key"
+        self._attr_name = f"{device_name.replace('_', ' ').title()} Trash Key"
         self._attr_unique_id = f"ir_remote_{device_name}_delete"
         self._attr_entity_category = EntityCategory.CONFIG
         self._attr_icon = "mdi:trash-can-outline"

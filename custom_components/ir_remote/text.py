@@ -85,7 +85,7 @@ class KeyNameText(TextEntity):
 
 class RenameTargetText(TextEntity):
     def __init__(self, device_name: str) -> None:
-        self._attr_name = f"{device_name.replace('_', ' ').title()} Rename To"
+        self._attr_name = f"{device_name.replace('_', ' ').title()} New Key Name"
         self._attr_unique_id = f"ir_remote_{device_name}_rename_to"
         self._attr_native_value = ""
         self._attr_native_min = 0
