@@ -69,7 +69,7 @@ class LearnButton(ButtonEntity):
         self.hass = hass
         self._prefix = prefix
         self._device = device_name
-        self._attr_name = f"{device_name} Learn Key".replace("_", " ").title()
+        self._attr_name = f"{device_name.replace('_', ' ').title()} · Learn Key"
         self._attr_unique_id = f"ir_remote_{device_name}_learn"
         self._attr_icon = "mdi:record-circle"
         self._attr_device_info = DeviceInfo(

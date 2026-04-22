@@ -43,7 +43,7 @@ async def async_setup_entry(
 
 class KeyNameText(TextEntity):
     def __init__(self, device_name: str) -> None:
-        self._attr_name = f"{device_name} New Key Name".replace("_", " ").title()
+        self._attr_name = f"{device_name.replace('_', ' ').title()} · Key Name"
         self._attr_unique_id = f"ir_remote_{device_name}_key_name"
         self._attr_native_value = ""
         self._attr_native_min = 0
