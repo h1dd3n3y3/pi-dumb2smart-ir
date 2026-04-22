@@ -4,6 +4,7 @@ from homeassistant.components import mqtt
 from homeassistant.components.button import ButtonEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -16,7 +17,8 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     prefix = entry.data.get(CONF_TOPIC_PREFIX, DEFAULT_TOPIC_PREFIX)
-    added = set()
+    added: set[str] = set()
+    ir_buttons: dict[str, IRRemoteButton] = {}
 
     @callback
     def handle_devices(msg):
@@ -26,6 +28,8 @@ async def async_setup_entry(
             return
 
         new_entities = []
+        current_key_uids: set[str] = set()
+
         for device_name, keys in devices.items():
             learn_uid = f"{device_name}_learn"
             if learn_uid not in added:
@@ -34,11 +38,22 @@ async def async_setup_entry(
                 new_entities.append(DeleteButton(hass, prefix, device_name))
             for key in keys:
                 uid = f"{device_name}_{key}"
+                current_key_uids.add(uid)
                 if uid not in added:
                     added.add(uid)
-                    new_entities.append(
-                        IRRemoteButton(hass, prefix, device_name, key)
-                    )
+                    btn = IRRemoteButton(hass, prefix, device_name, key)
+                    ir_buttons[uid] = btn
+                    new_entities.append(btn)
+
+        # Remove button entities for keys that no longer exist
+        registry = er.async_get(hass)
+        for uid in list(ir_buttons):
+            if uid not in current_key_uids:
+                entity = ir_buttons.pop(uid)
+                added.discard(uid)
+                entity_id = registry.async_get_entity_id("button", DOMAIN, entity._attr_unique_id)
+                if entity_id:
+                    registry.async_remove(entity_id)
 
         if new_entities:
             async_add_entities(new_entities)
@@ -119,6 +134,8 @@ class DeleteButton(ButtonEntity):
             f"{self._prefix}/key/delete",
             json.dumps({"device": self._device, "key": key_name}),
         )
+        if text_entity:
+            text_entity.clear()
 
 
 class IRRemoteButton(ButtonEntity):
