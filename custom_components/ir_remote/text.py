@@ -65,7 +65,7 @@ class KeyNameText(TextEntity):
         self._attr_native_max = 64
         self._attr_available = True
         self._attr_entity_category = EntityCategory.CONFIG
-        self._attr_icon = "mdi:keyboard"
+        self._attr_icon = "mdi:alpha-a-box-outline"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, f"ir_{device_name}")},
             name=device_name.replace("_", " ").title(),
