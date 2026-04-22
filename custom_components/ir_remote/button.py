@@ -31,6 +31,7 @@ async def async_setup_entry(
             if learn_uid not in added:
                 added.add(learn_uid)
                 new_entities.append(LearnButton(hass, prefix, device_name))
+                new_entities.append(DeleteButton(hass, prefix, device_name))
             for key in keys:
                 uid = f"{device_name}_{key}"
                 if uid not in added:
