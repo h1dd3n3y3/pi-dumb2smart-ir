@@ -187,11 +187,14 @@ def _handle_delete(client: mqtt.Client, payload: str) -> None:
 
     device_path = os.path.join(_script_dir(), f"{device_name}.json")
     raw = _load_raw(device_path)
-    if key_name in raw.get("keys", {}):
-        del raw["keys"][key_name]
+    keys = raw.get("keys", {})
+    actual_key = next((k for k in keys if k.lower() == key_name.lower()), None)
+    if actual_key:
+        del keys[actual_key]
+        raw["keys"] = keys
         _save_raw(device_path, raw)
         _republish_devices(client)
-        print(f"[INFO] Deleted '{key_name}' from '{device_name}'")
+        print(f"[INFO] Deleted '{actual_key}' from '{device_name}'")
 
 
 def _handle_rename(client: mqtt.Client, payload: str) -> None:
@@ -206,8 +209,10 @@ def _handle_rename(client: mqtt.Client, payload: str) -> None:
     device_path = os.path.join(_script_dir(), f"{device_name}.json")
     raw = _load_raw(device_path)
     keys = raw.get("keys", {})
-    if old_name in keys and new_name not in keys:
-        keys[new_name] = keys.pop(old_name)
+    actual_old = next((k for k in keys if k.lower() == old_name.lower()), None)
+    actual_new = next((k for k in keys if k.lower() == new_name.lower()), None)
+    if actual_old and not actual_new:
+        keys[new_name] = keys.pop(actual_old)
         raw["keys"] = keys
         _save_raw(device_path, raw)
         _republish_devices(client)
