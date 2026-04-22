@@ -4,6 +4,7 @@ from homeassistant.components import mqtt
 from homeassistant.components.text import TextEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -28,6 +29,17 @@ async def async_setup_entry(
             devices = json.loads(msg.payload)
         except Exception:
             return
+
+        valid_unique_ids: set[str] = set()
+        for device_name in devices:
+            valid_unique_ids.add(f"ir_remote_{device_name}_key_name")
+            if device_name in hass.data[DOMAIN].get("rename_target_texts", {}):
+                valid_unique_ids.add(f"ir_remote_{device_name}_rename_to")
+
+        registry = er.async_get(hass)
+        for entry_item in er.async_entries_for_config_entry(registry, entry.entry_id):
+            if entry_item.domain == "text" and entry_item.unique_id not in valid_unique_ids:
+                registry.async_remove(entry_item.entity_id)
 
         new_entities = []
         for device_name in devices:
