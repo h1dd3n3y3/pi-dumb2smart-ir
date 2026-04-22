@@ -157,21 +157,41 @@ class RenameButton(ButtonEntity):
         )
 
     async def async_press(self) -> None:
+        from .text import RenameTargetText
+
         old_text = self.hass.data[DOMAIN].get("key_name_texts", {}).get(self._device)
-        new_text = self.hass.data[DOMAIN].get("new_key_name_texts", {}).get(self._device)
         old_name = (old_text._attr_native_value or "").strip() if old_text else ""
-        new_name = (new_text._attr_native_value or "").strip() if new_text else ""
-        if not old_name or not new_name:
+        if not old_name:
             return
+
+        rename_target = self.hass.data[DOMAIN].get("rename_target_texts", {}).get(self._device)
+
+        if rename_target is None:
+            entity = RenameTargetText(self._device)
+            self.hass.data[DOMAIN].setdefault("rename_target_texts", {})[self._device] = entity
+            add_entities = self.hass.data[DOMAIN].get("text_add_entities")
+            if add_entities:
+                add_entities([entity])
+            return
+
+        new_name = (rename_target._attr_native_value or "").strip()
+        if not new_name:
+            return
+
         await mqtt.async_publish(
             self.hass,
             f"{self._prefix}/key/rename",
             json.dumps({"device": self._device, "old": old_name, "new": new_name}),
         )
+
         if old_text:
             old_text.clear()
-        if new_text:
-            new_text.clear()
+
+        registry = er.async_get(self.hass)
+        entity_id = registry.async_get_entity_id("text", DOMAIN, rename_target._attr_unique_id)
+        if entity_id:
+            registry.async_remove(entity_id)
+        del self.hass.data[DOMAIN]["rename_target_texts"][self._device]
 
 
 class IRRemoteButton(ButtonEntity):

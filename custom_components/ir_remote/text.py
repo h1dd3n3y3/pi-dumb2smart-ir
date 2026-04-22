@@ -19,7 +19,8 @@ async def async_setup_entry(
     added = set()
 
     hass.data[DOMAIN].setdefault("key_name_texts", {})
-    hass.data[DOMAIN].setdefault("new_key_name_texts", {})
+    hass.data[DOMAIN].setdefault("rename_target_texts", {})
+    hass.data[DOMAIN]["text_add_entities"] = async_add_entities
 
     @callback
     def handle_devices(msg):
@@ -35,9 +36,6 @@ async def async_setup_entry(
                 entity = KeyNameText(device_name)
                 hass.data[DOMAIN]["key_name_texts"][device_name] = entity
                 new_entities.append(entity)
-                new_entity = NewKeyNameText(device_name)
-                hass.data[DOMAIN]["new_key_name_texts"][device_name] = new_entity
-                new_entities.append(new_entity)
 
         if new_entities:
             async_add_entities(new_entities)
@@ -72,12 +70,12 @@ class KeyNameText(TextEntity):
         self.async_write_ha_state()
 
 
-class NewKeyNameText(TextEntity):
+class RenameTargetText(TextEntity):
     def __init__(self, device_name: str) -> None:
-        self._attr_name = f"{device_name.replace('_', ' ').title()} New Key Name"
-        self._attr_unique_id = f"ir_remote_{device_name}_new_key_name"
+        self._attr_name = f"{device_name.replace('_', ' ').title()} Rename To"
+        self._attr_unique_id = f"ir_remote_{device_name}_rename_to"
         self._attr_native_value = ""
-        self._attr_native_min = 0
+        self._attr_native_min = 1
         self._attr_native_max = 64
         self._attr_available = True
         self._attr_entity_category = EntityCategory.CONFIG
