@@ -93,6 +93,34 @@ class LearnButton(ButtonEntity):
         )
 
 
+class DeleteButton(ButtonEntity):
+    def __init__(self, hass: HomeAssistant, prefix: str, device_name: str) -> None:
+        self.hass = hass
+        self._prefix = prefix
+        self._device = device_name
+        self._attr_name = f"{device_name.replace('_', ' ').title()} Remove Key"
+        self._attr_unique_id = f"ir_remote_{device_name}_delete"
+        self._attr_entity_category = EntityCategory.CONFIG
+        self._attr_icon = "mdi:trash-can-outline"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, f"ir_{device_name}")},
+            name=device_name.replace("_", " ").title(),
+            model="ANAVI IR pHAT",
+            manufacturer="ANAVI",
+        )
+
+    async def async_press(self) -> None:
+        text_entity = self.hass.data[DOMAIN].get("key_name_texts", {}).get(self._device)
+        key_name = (text_entity._attr_native_value or "").strip() if text_entity else ""
+        if not key_name:
+            return
+        await mqtt.async_publish(
+            self.hass,
+            f"{self._prefix}/key/delete",
+            json.dumps({"device": self._device, "key": key_name}),
+        )
+
+
 class IRRemoteButton(ButtonEntity):
     def __init__(
         self,
