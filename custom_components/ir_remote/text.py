@@ -21,7 +21,6 @@ async def async_setup_entry(
 
     hass.data[DOMAIN].setdefault("key_name_texts", {})
     hass.data[DOMAIN].setdefault("rename_target_texts", {})
-    hass.data[DOMAIN]["text_add_entities"] = async_add_entities
 
     @callback
     def handle_devices(msg):
@@ -33,8 +32,7 @@ async def async_setup_entry(
         valid_unique_ids: set[str] = set()
         for device_name in devices:
             valid_unique_ids.add(f"ir_remote_{device_name}_key_name")
-            if device_name in hass.data[DOMAIN].get("rename_target_texts", {}):
-                valid_unique_ids.add(f"ir_remote_{device_name}_rename_to")
+            valid_unique_ids.add(f"ir_remote_{device_name}_rename_to")
 
         registry = er.async_get(hass)
         for entry_item in er.async_entries_for_config_entry(registry, entry.entry_id):
@@ -45,9 +43,12 @@ async def async_setup_entry(
         for device_name in devices:
             if device_name not in added:
                 added.add(device_name)
-                entity = KeyNameText(device_name)
-                hass.data[DOMAIN]["key_name_texts"][device_name] = entity
-                new_entities.append(entity)
+                key_entity = KeyNameText(device_name)
+                hass.data[DOMAIN]["key_name_texts"][device_name] = key_entity
+                new_entities.append(key_entity)
+                rename_entity = RenameTargetText(device_name)
+                hass.data[DOMAIN]["rename_target_texts"][device_name] = rename_entity
+                new_entities.append(rename_entity)
 
         if new_entities:
             async_add_entities(new_entities)
@@ -87,7 +88,7 @@ class RenameTargetText(TextEntity):
         self._attr_name = f"{device_name.replace('_', ' ').title()} Rename To"
         self._attr_unique_id = f"ir_remote_{device_name}_rename_to"
         self._attr_native_value = ""
-        self._attr_native_min = 1
+        self._attr_native_min = 0
         self._attr_native_max = 64
         self._attr_available = True
         self._attr_entity_category = EntityCategory.CONFIG
