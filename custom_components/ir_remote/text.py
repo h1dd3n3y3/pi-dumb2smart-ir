@@ -22,7 +22,9 @@ async def async_setup_entry(
 
     new_device_entity = NewDeviceNameText(prefix)
     entry_data["new_device_name_text"] = new_device_entity
-    async_add_entities([new_device_entity])
+    rename_device_entity = RenameTargetDeviceText(prefix)
+    entry_data["rename_device_name_text"] = rename_device_entity
+    async_add_entities([new_device_entity, rename_device_entity])
 
     @callback
     def handle_devices(msg):
@@ -31,7 +33,10 @@ async def async_setup_entry(
         except Exception:
             return
 
-        valid_unique_ids: set[str] = {f"ir_remote_{prefix}_new_remote"}
+        valid_unique_ids: set[str] = {
+            f"ir_remote_{prefix}_new_remote",
+            f"ir_remote_{prefix}_rename_remote_to",
+        }
         for device_name in devices:
             valid_unique_ids.add(f"ir_remote_{prefix}_{device_name}_key_name")
             valid_unique_ids.add(f"ir_remote_{prefix}_{device_name}_rename_to")
@@ -60,7 +65,7 @@ async def async_setup_entry(
 
 class NewDeviceNameText(TextEntity):
     def __init__(self, prefix: str) -> None:
-        self._attr_name = "New Remote"
+        self._attr_name = "Remote Name"
         self._attr_unique_id = f"ir_remote_{prefix}_new_remote"
         self._attr_native_value = ""
         self._attr_native_min = 0
@@ -98,6 +103,33 @@ class KeyNameText(TextEntity):
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, f"ir_{prefix}_{device_name}")},
             name=device_name.replace("_", " ").title(),
+            model="ANAVI IR pHAT",
+            manufacturer="ANAVI",
+        )
+
+    async def async_set_value(self, value: str) -> None:
+        self._attr_native_value = value
+        self.async_write_ha_state()
+
+    @callback
+    def clear(self) -> None:
+        self._attr_native_value = ""
+        self.async_write_ha_state()
+
+
+class RenameTargetDeviceText(TextEntity):
+    def __init__(self, prefix: str) -> None:
+        self._attr_name = "New Remote Name"
+        self._attr_unique_id = f"ir_remote_{prefix}_rename_remote_to"
+        self._attr_native_value = ""
+        self._attr_native_min = 0
+        self._attr_native_max = 64
+        self._attr_available = True
+        self._attr_entity_category = EntityCategory.CONFIG
+        self._attr_icon = "mdi:form-textbox"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, f"ir_{prefix}_bridge")},
+            name="IR Bridge",
             model="ANAVI IR pHAT",
             manufacturer="ANAVI",
         )

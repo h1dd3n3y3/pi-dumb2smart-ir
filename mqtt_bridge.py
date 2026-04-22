@@ -15,6 +15,8 @@ Subscribes to:
   - ir_remote/key/delete       payload = {"device":..,"key":..} → delete key
   - ir_remote/key/rename       payload = {"device":..,"old":..,"new":..} → rename key
   - ir_remote/device/create    payload = {"device":..} → create new device JSON
+  - ir_remote/device/delete    payload = {"device":..} → delete device JSON
+  - ir_remote/device/rename    payload = {"old":..,"new":..} → rename device JSON
 
 Environment variables:
     MQTT_HOST   broker hostname/IP  (default: pi5.local)
@@ -47,6 +49,8 @@ RECORD_STATUS_TOPIC = f"{BASE_TOPIC}/record/status"
 KEY_DELETE_TOPIC = f"{BASE_TOPIC}/key/delete"
 KEY_RENAME_TOPIC = f"{BASE_TOPIC}/key/rename"
 DEVICE_CREATE_TOPIC = f"{BASE_TOPIC}/device/create"
+DEVICE_DELETE_TOPIC = f"{BASE_TOPIC}/device/delete"
+DEVICE_RENAME_TOPIC = f"{BASE_TOPIC}/device/rename"
 
 _remotes: dict = {}
 
@@ -254,6 +258,53 @@ def _handle_create_device(client: mqtt.Client, payload: str) -> None:
     print(f"[INFO] Created device '{device_name}'")
 
 
+def _handle_delete_device(client: mqtt.Client, payload: str) -> None:
+    try:
+        data = json.loads(payload)
+        device_name = data["device"].strip().lower().replace(" ", "_")
+    except Exception:
+        return
+
+    if not device_name:
+        return
+
+    device_path = os.path.join(_script_dir(), f"{device_name}.json")
+    if not os.path.exists(device_path):
+        print(f"[INFO] Device '{device_name}' not found, skipping delete")
+        return
+
+    os.remove(device_path)
+    _republish_devices(client)
+    print(f"[INFO] Deleted device '{device_name}'")
+
+
+def _handle_rename_device(client: mqtt.Client, payload: str) -> None:
+    try:
+        data = json.loads(payload)
+        old_name = data["old"].strip().lower().replace(" ", "_")
+        new_name = data["new"].strip().lower().replace(" ", "_")
+    except Exception:
+        return
+
+    if not old_name or not new_name:
+        return
+
+    old_path = os.path.join(_script_dir(), f"{old_name}.json")
+    new_path = os.path.join(_script_dir(), f"{new_name}.json")
+
+    if not os.path.exists(old_path):
+        print(f"[INFO] Device '{old_name}' not found, skipping rename")
+        return
+
+    if os.path.exists(new_path):
+        print(f"[INFO] Device '{new_name}' already exists, skipping rename")
+        return
+
+    os.rename(old_path, new_path)
+    _republish_devices(client)
+    print(f"[INFO] Renamed device '{old_name}' -> '{new_name}'")
+
+
 # ---------------------------------------------------------------------------
 # MQTT callbacks
 # ---------------------------------------------------------------------------
@@ -278,7 +329,7 @@ def on_connect(client, userdata, _flags, rc, _properties=None):
             client.subscribe(topic)
             print(f"[INFO] Subscribed to {topic}")
 
-    for topic in (RELOAD_TOPIC, RECORD_START_TOPIC, KEY_DELETE_TOPIC, KEY_RENAME_TOPIC, DEVICE_CREATE_TOPIC):
+    for topic in (RELOAD_TOPIC, RECORD_START_TOPIC, KEY_DELETE_TOPIC, KEY_RENAME_TOPIC, DEVICE_CREATE_TOPIC, DEVICE_DELETE_TOPIC, DEVICE_RENAME_TOPIC):
         client.subscribe(topic)
         print(f"[INFO] Subscribed to {topic}")
 
@@ -302,6 +353,12 @@ def on_message(client, userdata, msg):
 
     elif topic == DEVICE_CREATE_TOPIC:
         _handle_create_device(client, payload)
+
+    elif topic == DEVICE_DELETE_TOPIC:
+        _handle_delete_device(client, payload)
+
+    elif topic == DEVICE_RENAME_TOPIC:
+        _handle_rename_device(client, payload)
 
     else:
         parts = topic.split("/")

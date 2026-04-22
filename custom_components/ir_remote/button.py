@@ -32,6 +32,8 @@ async def async_setup_entry(
         valid_unique_ids: set[str] = {
             f"ir_remote_{prefix}_reload",
             f"ir_remote_{prefix}_save_remote",
+            f"ir_remote_{prefix}_delete_remote",
+            f"ir_remote_{prefix}_rename_remote",
         }
         for device_name, keys in devices.items():
             valid_unique_ids.add(f"ir_remote_{prefix}_{device_name}_learn")
@@ -76,6 +78,8 @@ async def async_setup_entry(
     async_add_entities([
         ReloadButton(hass, prefix),
         CreateDeviceButton(hass, prefix, entry.entry_id),
+        DeleteDeviceButton(hass, prefix, entry.entry_id),
+        RenameDeviceButton(hass, prefix, entry.entry_id),
     ])
 
 
@@ -125,6 +129,71 @@ class CreateDeviceButton(ButtonEntity):
         )
         if text_entity:
             text_entity.clear()
+
+
+class DeleteDeviceButton(ButtonEntity):
+    def __init__(self, hass: HomeAssistant, prefix: str, entry_id: str) -> None:
+        self.hass = hass
+        self._prefix = prefix
+        self._entry_id = entry_id
+        self._attr_name = "Delete Remote"
+        self._attr_unique_id = f"ir_remote_{prefix}_delete_remote"
+        self._attr_entity_category = EntityCategory.CONFIG
+        self._attr_icon = "mdi:trash-can-outline"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, f"ir_{prefix}_bridge")},
+            name="IR Bridge",
+            model="ANAVI IR pHAT",
+            manufacturer="ANAVI",
+        )
+
+    async def async_press(self) -> None:
+        text_entity = self.hass.data[DOMAIN][self._entry_id].get("new_device_name_text")
+        name = (text_entity._attr_native_value or "").strip() if text_entity else ""
+        if not name:
+            return
+        await mqtt.async_publish(
+            self.hass,
+            f"{self._prefix}/device/delete",
+            json.dumps({"device": name}),
+        )
+        if text_entity:
+            text_entity.clear()
+
+
+class RenameDeviceButton(ButtonEntity):
+    def __init__(self, hass: HomeAssistant, prefix: str, entry_id: str) -> None:
+        self.hass = hass
+        self._prefix = prefix
+        self._entry_id = entry_id
+        self._attr_name = "Rename Remote"
+        self._attr_unique_id = f"ir_remote_{prefix}_rename_remote"
+        self._attr_entity_category = EntityCategory.CONFIG
+        self._attr_icon = "mdi:rename-box"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, f"ir_{prefix}_bridge")},
+            name="IR Bridge",
+            model="ANAVI IR pHAT",
+            manufacturer="ANAVI",
+        )
+
+    async def async_press(self) -> None:
+        entry_data = self.hass.data[DOMAIN][self._entry_id]
+        old_text = entry_data.get("new_device_name_text")
+        new_text = entry_data.get("rename_device_name_text")
+        old_name = (old_text._attr_native_value or "").strip() if old_text else ""
+        new_name = (new_text._attr_native_value or "").strip() if new_text else ""
+        if not old_name or not new_name:
+            return
+        await mqtt.async_publish(
+            self.hass,
+            f"{self._prefix}/device/rename",
+            json.dumps({"old": old_name, "new": new_name}),
+        )
+        if old_text:
+            old_text.clear()
+        if new_text:
+            new_text.clear()
 
 
 class LearnButton(ButtonEntity):
