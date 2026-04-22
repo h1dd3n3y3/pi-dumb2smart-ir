@@ -65,7 +65,7 @@ async def async_setup_entry(
 
 class NewDeviceNameText(TextEntity):
     def __init__(self, prefix: str) -> None:
-        self._attr_name = "Remote Name"
+        self._attr_name = "Device Name"
         self._attr_unique_id = f"ir_remote_{prefix}_new_remote"
         self._attr_native_value = ""
         self._attr_native_min = 0
@@ -119,7 +119,7 @@ class KeyNameText(TextEntity):
 
 class RenameTargetDeviceText(TextEntity):
     def __init__(self, prefix: str) -> None:
-        self._attr_name = "New Remote Name"
+        self._attr_name = "Remote New Name"
         self._attr_unique_id = f"ir_remote_{prefix}_rename_remote_to"
         self._attr_native_value = ""
         self._attr_native_min = 0
