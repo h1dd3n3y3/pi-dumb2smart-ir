@@ -2,7 +2,7 @@ import json
 
 import voluptuous as vol
 from homeassistant.components import mqtt
-from homeassistant.components.repairs import IssueSeverity, async_create_issue
+from homeassistant.helpers.issue_registry import IssueSeverity, async_create_issue
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers import config_validation as cv
