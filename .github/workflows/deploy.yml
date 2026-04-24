@@ -19,4 +19,4 @@ jobs:
         run: |
           cd ~/pi-dumb2smart-ir && git pull
           sudo cp -r custom_components/ir_remote ~/home-assistant/config/custom_components/
-          cd ~/home-assistant && docker compose restart
+          mosquitto_pub -h 192.168.1.254 -t "ir_remote/system/restart_needed" -m "1" || true
