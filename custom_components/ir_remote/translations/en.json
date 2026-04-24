@@ -17,8 +17,7 @@
     },
     "error": {
       "mqtt_not_configured": "MQTT is not configured in Home Assistant. Set it up first under Settings → Devices & Services → MQTT.",
-      "pi_offline": "Could not reach the IR bridge. Make sure it is running and connected to the MQTT broker.",
-      "no_devices": "The bridge is online but has no devices. Record some IR keys first using remote.py."
+      "pi_offline": "Could not reach the IR bridge. Make sure it is running and connected to the MQTT broker."
     },
     "abort": {
       "already_configured": "This IR Remote is already configured."
