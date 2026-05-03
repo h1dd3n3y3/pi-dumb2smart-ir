@@ -1,6 +1,6 @@
 # IR Remote — Home Assistant Integration
 
-[![Deploy](https://github.com/h1dd3n3y3/pi-dumb2smart-ir/actions/workflows/deploy.yml/badge.svg?branch=hacs-integration)](https://github.com/h1dd3n3y3/pi-dumb2smart-ir/actions/workflows/deploy.yml)
+[![Deploy](https://github.com/h1dd3n3y3/pi-dumb2smart-ir/actions/workflows/deploy.yml/badge.svg?branch=main)](https://github.com/h1dd3n3y3/pi-dumb2smart-ir/actions/workflows/deploy.yml)
 
 Control any IR-controlled device (TV, AC, amplifier) from Home Assistant. A Raspberry Pi with an [ANAVI Infrared pHAT](https://anavi.technology/) sits near your device and fires IR signals on command, communicating over MQTT.
 
@@ -17,10 +17,9 @@ Control any IR-controlled device (TV, AC, amplifier) from Home Assistant. A Rasp
 
 ### Via HACS (recommended)
 
-1. In Home Assistant, go to **HACS → Custom repositories**
-2. Add `https://github.com/h1dd3n3y3/pi-dumb2smart-ir` with category **Integration**
-3. Search for **IR Remote** and install it
-4. Restart Home Assistant
+1. In Home Assistant, go to **HACS → Integrations**
+2. Search for **IR Remote** and install it
+3. Restart Home Assistant
 
 ### Manual
 
