@@ -9,3 +9,4 @@ cd && sudo rm -r master.zip pigpio-master
 
 pip3 install PiIR --break-system-packages
 echo 'export PATH=$HOME/.local/bin:$PATH' >> ~/.bashrc && source ~/.bashrc
+
