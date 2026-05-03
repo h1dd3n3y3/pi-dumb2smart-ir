@@ -3,7 +3,7 @@ name: Deploy
 on:
   push:
     branches:
-      - hacs-integration
+      - main
 
 jobs:
   deploy:
@@ -12,7 +12,7 @@ jobs:
       - name: Pull latest code on pi02-reader
         run: |
           ssh -o StrictHostKeyChecking=no david@pi02-reader \
-            'cd ~/pi-dumb2smart-ir && git pull && pip3 install -r requirements.txt --break-system-packages && sudo systemctl restart ir-mqtt-bridge'
+            'cd ~/pi-dumb2smart-ir && pip3 install -r requirements.txt --break-system-packages && sudo systemctl restart ir-mqtt-bridge'
 
       - name: Update HA integration on pi5
         run: |
