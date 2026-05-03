@@ -1,4 +1,4 @@
-# IR Remote — Home Assistant Integration
+# IR Remote (ANAVI IR pHAT) — Home Assistant Integration
 
 [![Deploy](https://github.com/h1dd3n3y3/pi-dumb2smart-ir/actions/workflows/deploy.yml/badge.svg?branch=main)](https://github.com/h1dd3n3y3/pi-dumb2smart-ir/actions/workflows/deploy.yml)
 

@@ -1,5 +1,5 @@
 {
-  "name": "IR Remote",
+  "name": "IR Remote (ANAVI IR pHAT)",
   "render_readme": true,
   "homeassistant": "2026.4.1"
 }
