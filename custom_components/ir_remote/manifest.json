@@ -1,6 +1,6 @@
 {
   "domain": "ir_remote",
-  "name": "IR Remote (ANAVI IR pHAT)",
+  "name": "IR Remote (ANAVI pHAT)",
   "config_flow": true,
   "documentation": "https://github.com/h1dd3n3y3/pi-dumb2smart-ir",
   "requirements": [],
