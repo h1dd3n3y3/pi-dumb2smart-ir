@@ -9,7 +9,7 @@ Control any IR-controlled device (TV, AC, amplifier) from Home Assistant. A Rasp
 ## Prerequisites
 
 - Home Assistant with the **MQTT integration** configured
-- A running IR bridge — see the [`systemd-service`](https://github.com/h1dd3n3y3/pi-dumb2smart-ir/tree/systemd-service) branch for setup instructions
+- A running IR bridge — see the [`pi-dumb2smart-ir-bridge`](https://github.com/h1dd3n3y3/pi-dumb2smart-ir-bridge) repo for setup instructions
 
 ---
 
@@ -103,4 +103,4 @@ The integration uses `local_push` — the bridge maintains a persistent MQTT con
 
 - [ANAVI Infrared pHAT](https://anavi.technology/) — the IR hardware
 - [PiIR](https://github.com/ts1/PiIR) — IR signal library used by the bridge
-- [`systemd-service` branch](https://github.com/h1dd3n3y3/pi-dumb2smart-ir/tree/systemd-service) — Pi bridge setup and systemd service
+- [`pi-dumb2smart-ir-bridge`](https://github.com/h1dd3n3y3/pi-dumb2smart-ir-bridge) — Pi bridge setup and systemd service
