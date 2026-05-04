@@ -9,7 +9,7 @@ from homeassistant.helpers import config_validation as cv
 
 from .const import CONF_TOPIC_PREFIX, DEFAULT_TOPIC_PREFIX, DOMAIN
 
-PLATFORMS = ["button", "sensor", "text"]
+PLATFORMS = ["button", "number", "sensor", "text"]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
