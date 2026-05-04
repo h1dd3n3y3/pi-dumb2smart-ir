@@ -69,11 +69,11 @@ Once configured, the integration creates entities for each remote device the bri
 
 ## Recording a new key
 
-1. Enter the **device name** and **key name** in the text inputs
-2. Press **Learn New Key** for the target device
-3. Watch the **IR Recording Status** sensor — it will show `recording`
-4. Point your physical remote at the Pi and press the button **3 times**
-5. Status changes to `done` — the new button appears automatically in HA
+1. Find the device's **Key Name** text input and enter the name for the new key (e.g. `power`, `volume_up`)
+2. Press the **Learn Key** button for that device
+3. Point your physical remote at the Pi and press the target button within 30 seconds
+4. The **IR Recording Status** sensor transitions `idle` → `recording` → `done`
+5. The key name field clears and the new button appears automatically in HA
 
 > No restart required for new keys. Entities update live via MQTT discovery.
 
