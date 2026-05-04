@@ -43,7 +43,6 @@ async def async_setup_entry(
             valid_unique_ids.add(f"ir_remote_{prefix}_{device_name}_delete")
             valid_unique_ids.add(f"ir_remote_{prefix}_{device_name}_rename")
             valid_unique_ids.add(f"ir_remote_{prefix}_{device_name}_register_multipress")
-            valid_unique_ids.add(f"ir_remote_{prefix}_{device_name}_delete_virtual_key")
             for key in keys:
                 valid_unique_ids.add(f"ir_remote_{prefix}_{device_name}_{key}")
 
@@ -71,7 +70,6 @@ async def async_setup_entry(
                 new_entities.append(DeleteButton(hass, prefix, device_name, entry.entry_id))
                 new_entities.append(RenameButton(hass, prefix, device_name, entry.entry_id))
                 new_entities.append(RegisterMultiPressButton(hass, prefix, device_name, entry.entry_id))
-                new_entities.append(DeleteVirtualKeyButton(hass, prefix, device_name, entry.entry_id))
             for key in keys:
                 uid = f"{device_name}_{key}"
                 if uid not in added:
@@ -382,33 +380,3 @@ class RegisterMultiPressButton(ButtonEntity):
             source_text.clear()
 
 
-class DeleteVirtualKeyButton(ButtonEntity):
-    def __init__(self, hass: HomeAssistant, prefix: str, device_name: str, entry_id: str) -> None:
-        self.hass = hass
-        self._prefix = prefix
-        self._device = device_name
-        self._entry_id = entry_id
-        self._attr_name = f"{device_name.replace('_', ' ').title()} Virtual Key Delete"
-        self._attr_unique_id = f"ir_remote_{prefix}_{device_name}_delete_virtual_key"
-        self._attr_entity_category = EntityCategory.CONFIG
-        self._attr_icon = "mdi:minus-circle-outline"
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, f"ir_{prefix}_{device_name}")},
-            name=device_name.replace("_", " ").title(),
-            model="ANAVI IR pHAT",
-            manufacturer="ANAVI",
-        )
-
-    async def async_press(self) -> None:
-        entry_data = self.hass.data[DOMAIN][self._entry_id]
-        name_text = entry_data["multipress_name_texts"].get(self._device)
-        name = (name_text._attr_native_value or "").strip() if name_text else ""
-        if not name:
-            return
-        await mqtt.async_publish(
-            self.hass,
-            f"{self._prefix}/virtual_key/delete",
-            json.dumps({"device": self._device, "name": name}),
-        )
-        if name_text:
-            name_text.clear()
