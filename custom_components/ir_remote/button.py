@@ -257,6 +257,11 @@ class DeleteButton(ButtonEntity):
             f"{self._prefix}/key/delete",
             json.dumps({"device": self._device, "key": key_name}),
         )
+        await mqtt.async_publish(
+            self.hass,
+            f"{self._prefix}/virtual_key/delete",
+            json.dumps({"device": self._device, "name": key_name}),
+        )
         if text_entity:
             text_entity.clear()
 
