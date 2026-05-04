@@ -1,6 +1,7 @@
 # IR Remote (ANAVI IR pHAT) — Home Assistant Integration
 
 [![Deploy](https://github.com/h1dd3n3y3/pi-dumb2smart-ir/actions/workflows/deploy.yml/badge.svg?branch=main)](https://github.com/h1dd3n3y3/pi-dumb2smart-ir/actions/workflows/deploy.yml)
+[![Release](https://github.com/h1dd3n3y3/pi-dumb2smart-ir/actions/workflows/release.yml/badge.svg)](https://github.com/h1dd3n3y3/pi-dumb2smart-ir/actions/workflows/release.yml)
 [![HACS Action](https://github.com/h1dd3n3y3/pi-dumb2smart-ir/actions/workflows/hacs.yml/badge.svg)](https://github.com/h1dd3n3y3/pi-dumb2smart-ir/actions/workflows/hacs.yml)
 [![Hassfest](https://github.com/h1dd3n3y3/pi-dumb2smart-ir/actions/workflows/hassfest.yml/badge.svg)](https://github.com/h1dd3n3y3/pi-dumb2smart-ir/actions/workflows/hassfest.yml)
 
