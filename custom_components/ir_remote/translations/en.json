@@ -9,9 +9,12 @@
     "step": {
       "user": {
         "title": "Set up IR Remote",
-        "description": "Make sure the IR bridge is running on your Pi and connected to the same MQTT broker as Home Assistant.",
+        "description": "Enter the MQTT topic prefix for this bridge. It must match exactly what was set during bridge install.\n\nNot sure what it is? SSH into the Pi Zero and run:\n```\ncat /etc/ir-bridge/env\n```\n\nAdd the integration once per bridge, each with its own unique prefix.",
         "data": {
           "topic_prefix": "MQTT topic prefix"
+        },
+        "data_description": {
+          "topic_prefix": "Must match the prefix in /etc/ir-bridge/env on the Pi Zero (e.g. ir_remote_amp). Each bridge must have its own unique prefix."
         }
       }
     },

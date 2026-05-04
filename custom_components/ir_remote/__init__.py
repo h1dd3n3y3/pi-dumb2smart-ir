@@ -37,23 +37,26 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if not hass.services.has_service(DOMAIN, "record_key"):
 
         async def record_key(call: ServiceCall) -> None:
+            p = call.data.get(CONF_TOPIC_PREFIX, DEFAULT_TOPIC_PREFIX)
             await mqtt.async_publish(
                 hass,
-                f"{prefix}/record/start",
+                f"{p}/record/start",
                 json.dumps({"device": call.data["device"], "key": call.data["key"]}),
             )
 
         async def delete_key(call: ServiceCall) -> None:
+            p = call.data.get(CONF_TOPIC_PREFIX, DEFAULT_TOPIC_PREFIX)
             await mqtt.async_publish(
                 hass,
-                f"{prefix}/key/delete",
+                f"{p}/key/delete",
                 json.dumps({"device": call.data["device"], "key": call.data["key"]}),
             )
 
         async def rename_key(call: ServiceCall) -> None:
+            p = call.data.get(CONF_TOPIC_PREFIX, DEFAULT_TOPIC_PREFIX)
             await mqtt.async_publish(
                 hass,
-                f"{prefix}/key/rename",
+                f"{p}/key/rename",
                 json.dumps({
                     "device": call.data["device"],
                     "old": call.data["old_key"],
@@ -64,6 +67,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         schema_device_key = vol.Schema({
             vol.Required("device"): cv.string,
             vol.Required("key"): cv.string,
+            vol.Optional(CONF_TOPIC_PREFIX, default=DEFAULT_TOPIC_PREFIX): cv.string,
         })
 
         hass.services.async_register(DOMAIN, "record_key", record_key, schema=schema_device_key)
@@ -74,6 +78,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 vol.Required("device"): cv.string,
                 vol.Required("old_key"): cv.string,
                 vol.Required("new_key"): cv.string,
+                vol.Optional(CONF_TOPIC_PREFIX, default=DEFAULT_TOPIC_PREFIX): cv.string,
             }),
         )
 
