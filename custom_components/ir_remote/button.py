@@ -334,7 +334,7 @@ class RegisterMultiPressButton(ButtonEntity):
         self._prefix = prefix
         self._device = device_name
         self._entry_id = entry_id
-        self._attr_name = f"{device_name.replace('_', ' ').title()} Register Multi-Press"
+        self._attr_name = f"{device_name.replace('_', ' ').title()} Virtual Key Register"
         self._attr_unique_id = f"ir_remote_{prefix}_{device_name}_register_multipress"
         self._attr_entity_category = EntityCategory.CONFIG
         self._attr_icon = "mdi:plus-circle-outline"
@@ -388,7 +388,7 @@ class DeleteVirtualKeyButton(ButtonEntity):
         self._prefix = prefix
         self._device = device_name
         self._entry_id = entry_id
-        self._attr_name = f"{device_name.replace('_', ' ').title()} Delete Virtual Key"
+        self._attr_name = f"{device_name.replace('_', ' ').title()} Virtual Key Delete"
         self._attr_unique_id = f"ir_remote_{prefix}_{device_name}_delete_virtual_key"
         self._attr_entity_category = EntityCategory.CONFIG
         self._attr_icon = "mdi:minus-circle-outline"
