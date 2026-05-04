@@ -14,6 +14,13 @@ record_key:
       required: true
       selector:
         text:
+    topic_prefix:
+      name: MQTT topic prefix
+      description: Prefix of the target bridge (e.g. ir_remote_amp). Defaults to ir_remote. Must match the prefix in /etc/ir-bridge/env on the Pi Zero.
+      required: false
+      default: ir_remote
+      selector:
+        text:
 
 delete_key:
   name: Delete IR Key
@@ -29,6 +36,13 @@ delete_key:
       name: Key name
       description: Name of the key to delete
       required: true
+      selector:
+        text:
+    topic_prefix:
+      name: MQTT topic prefix
+      description: Prefix of the target bridge (e.g. ir_remote_amp). Defaults to ir_remote. Must match the prefix in /etc/ir-bridge/env on the Pi Zero.
+      required: false
+      default: ir_remote
       selector:
         text:
 
@@ -52,5 +66,12 @@ rename_key:
       name: New name
       description: New key name
       required: true
+      selector:
+        text:
+    topic_prefix:
+      name: MQTT topic prefix
+      description: Prefix of the target bridge (e.g. ir_remote_amp). Defaults to ir_remote. Must match the prefix in /etc/ir-bridge/env on the Pi Zero.
+      required: false
+      default: ir_remote
       selector:
         text:
