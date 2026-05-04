@@ -222,7 +222,7 @@ class LearnButton(ButtonEntity):
 
     async def async_press(self) -> None:
         text_entity = self.hass.data[DOMAIN][self._entry_id]["key_name_texts"].get(self._device)
-        key_name = (text_entity._attr_native_value or "").strip() if text_entity else ""
+        key_name = (text_entity._attr_native_value or "").strip().lower() if text_entity else ""
         if not key_name:
             return
         await mqtt.async_publish(
@@ -251,7 +251,7 @@ class DeleteButton(ButtonEntity):
 
     async def async_press(self) -> None:
         text_entity = self.hass.data[DOMAIN][self._entry_id]["key_name_texts"].get(self._device)
-        key_name = (text_entity._attr_native_value or "").strip() if text_entity else ""
+        key_name = (text_entity._attr_native_value or "").strip().lower() if text_entity else ""
         if not key_name:
             return
         await mqtt.async_publish(
@@ -284,8 +284,8 @@ class RenameButton(ButtonEntity):
         entry_data = self.hass.data[DOMAIN][self._entry_id]
         old_text = entry_data["key_name_texts"].get(self._device)
         new_text = entry_data["rename_target_texts"].get(self._device)
-        old_name = (old_text._attr_native_value or "").strip() if old_text else ""
-        new_name = (new_text._attr_native_value or "").strip() if new_text else ""
+        old_name = (old_text._attr_native_value or "").strip().lower() if old_text else ""
+        new_name = (new_text._attr_native_value or "").strip().lower() if new_text else ""
         if not old_name or not new_name:
             return
         await mqtt.async_publish(
@@ -352,8 +352,8 @@ class RegisterMultiPressButton(ButtonEntity):
         count_num = entry_data["multipress_count_numbers"].get(self._device)
         delay_num = entry_data["multipress_delay_numbers"].get(self._device)
 
-        name = (name_text._attr_native_value or "").strip() if name_text else ""
-        source = (source_text._attr_native_value or "").strip() if source_text else ""
+        name = (name_text._attr_native_value or "").strip().lower() if name_text else ""
+        source = (source_text._attr_native_value or "").strip().lower() if source_text else ""
         count = int(count_num._attr_native_value) if count_num else 2
         delay_ms = int(delay_num._attr_native_value) if delay_num else 300
 
