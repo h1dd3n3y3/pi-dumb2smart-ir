@@ -372,7 +372,7 @@ class RegisterMultiPressButton(ButtonEntity):
         await mqtt.async_publish(
             self.hass,
             f"{self._prefix}/virtual_key/create",
-            json.dumps({"device": self._device, "name": name, "source_key": source, "count": count, "delay_ms": delay_ms}),
+            json.dumps({"device": self._device, "name": name, "key": source, "repeat": count, "delay_ms": delay_ms}),
         )
         _LOGGER.debug("RegisterMultiPress: published to %s/virtual_key/create", self._prefix)
 
