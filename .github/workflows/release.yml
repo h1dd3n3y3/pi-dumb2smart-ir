@@ -2,8 +2,8 @@ name: Release
 
 on:
   push:
-    tags:
-      - "v*"
+    branches:
+      - main
 
 jobs:
   release:
@@ -15,18 +15,38 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Extract tag message
-        id: tag
+      - name: Compute next version
+        id: version
         run: |
-          git fetch --tags --force
-          NOTES=$(git tag -l --format='%(contents)' "${{ github.ref_name }}")
+          LATEST=$(git tag -l 'v*' | sort -V | tail -1)
+          if [ -z "$LATEST" ]; then LATEST="v0.0.0"; fi
+          MAJOR=$(echo "$LATEST" | cut -d. -f1 | tr -d 'v')
+          MINOR=$(echo "$LATEST" | cut -d. -f2)
+          PATCH=$(echo "$LATEST" | cut -d. -f3)
+          echo "tag=v${MAJOR}.${MINOR}.$((PATCH + 1))" >> "$GITHUB_OUTPUT"
+
+      - name: Get release notes from commit body
+        id: notes
+        run: |
+          BODY=$(git log -1 --format='%b')
+          SUBJECT=$(git log -1 --format='%s')
+          NOTES="${BODY:-$SUBJECT}"
           echo "notes<<EOF" >> "$GITHUB_OUTPUT"
           echo "$NOTES" >> "$GITHUB_OUTPUT"
           echo "EOF" >> "$GITHUB_OUTPUT"
 
+      - name: Tag and release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "${{ steps.version.outputs.tag }}"
+          git push origin "${{ steps.version.outputs.tag }}"
+
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name }}
-          name: ${{ github.ref_name }}
-          body: ${{ steps.tag.outputs.notes }}
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: ${{ steps.version.outputs.tag }}
+          body: ${{ steps.notes.outputs.notes }}
