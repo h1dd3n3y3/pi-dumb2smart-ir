@@ -63,7 +63,7 @@ class MultiPressCountNumber(NumberEntity):
         self._prefix = prefix
         self._device = device_name
         self._entry_id = entry_id
-        self._attr_name = f"{device_name.replace('_', ' ').title()} Virtual Key Count"
+        self._attr_name = f"{device_name.replace('_', ' ').title()} Virtual Key Press Count"
         self._attr_unique_id = f"ir_remote_{prefix}_{device_name}_multipress_count"
         self._attr_native_min_value = 2
         self._attr_native_max_value = 20
@@ -90,7 +90,7 @@ class MultiPressDelayNumber(NumberEntity):
         self._prefix = prefix
         self._device = device_name
         self._entry_id = entry_id
-        self._attr_name = f"{device_name.replace('_', ' ').title()} Virtual Key Delay"
+        self._attr_name = f"{device_name.replace('_', ' ').title()} Virtual Key Press Delay"
         self._attr_unique_id = f"ir_remote_{prefix}_{device_name}_multipress_delay"
         self._attr_native_min_value = 0
         self._attr_native_max_value = 2000
