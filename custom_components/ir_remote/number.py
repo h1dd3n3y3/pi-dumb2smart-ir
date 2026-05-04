@@ -68,7 +68,7 @@ class MultiPressCountNumber(NumberEntity):
         self._attr_native_min_value = 2
         self._attr_native_max_value = 20
         self._attr_native_step = 1
-        self._attr_native_value = 2.0
+        self._attr_native_value = 2
         self._attr_mode = NumberMode.BOX
         self._attr_entity_category = EntityCategory.CONFIG
         self._attr_icon = "mdi:counter"
@@ -80,7 +80,7 @@ class MultiPressCountNumber(NumberEntity):
         )
 
     async def async_set_native_value(self, value: float) -> None:
-        self._attr_native_value = value
+        self._attr_native_value = int(value)
         self.async_write_ha_state()
 
 
@@ -95,7 +95,7 @@ class MultiPressDelayNumber(NumberEntity):
         self._attr_native_min_value = 0
         self._attr_native_max_value = 2000
         self._attr_native_step = 50
-        self._attr_native_value = 300.0
+        self._attr_native_value = 300
         self._attr_native_unit_of_measurement = "ms"
         self._attr_mode = NumberMode.BOX
         self._attr_entity_category = EntityCategory.CONFIG
@@ -108,5 +108,5 @@ class MultiPressDelayNumber(NumberEntity):
         )
 
     async def async_set_native_value(self, value: float) -> None:
-        self._attr_native_value = value
+        self._attr_native_value = int(value)
         self.async_write_ha_state()
