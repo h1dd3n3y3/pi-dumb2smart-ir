@@ -29,7 +29,13 @@ async def async_setup_entry(
 
         registry = er.async_get(hass)
         for entry_item in er.async_entries_for_config_entry(registry, entry.entry_id):
-            if entry_item.domain == "number" and entry_item.unique_id in (
+            if entry_item.domain != "number":
+                continue
+            uid = entry_item.unique_id
+            if uid.endswith("_repeat_count") or uid.endswith("_repeat_delay"):
+                registry.async_remove(entry_item.entity_id)
+                continue
+            if uid in (
                 f"ir_remote_{prefix}_{d}_multipress_count" for d in list(entry_data.get("multipress_count_numbers", {}))
                 if d not in devices
             ):
