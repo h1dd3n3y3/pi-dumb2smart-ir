@@ -1,4 +1,7 @@
 import json
+import logging
+
+_LOGGER = logging.getLogger(__name__)
 
 from homeassistant.components import mqtt
 from homeassistant.components.button import ButtonEntity
@@ -354,7 +357,16 @@ class RegisterMultiPressButton(ButtonEntity):
         count = int(count_num._attr_native_value) if count_num else 2
         delay_ms = int(delay_num._attr_native_value) if delay_num else 300
 
+        _LOGGER.debug(
+            "RegisterMultiPress: device=%s name=%r source=%r count=%s delay_ms=%s",
+            self._device, name, source, count, delay_ms,
+        )
+
         if not name or not source:
+            _LOGGER.warning(
+                "RegisterMultiPress aborted: name=%r source=%r — fill both fields before pressing",
+                name, source,
+            )
             return
 
         await mqtt.async_publish(
@@ -362,6 +374,7 @@ class RegisterMultiPressButton(ButtonEntity):
             f"{self._prefix}/virtual_key/create",
             json.dumps({"device": self._device, "name": name, "source_key": source, "count": count, "delay_ms": delay_ms}),
         )
+        _LOGGER.debug("RegisterMultiPress: published to %s/virtual_key/create", self._prefix)
 
         if name_text:
             name_text.clear()
