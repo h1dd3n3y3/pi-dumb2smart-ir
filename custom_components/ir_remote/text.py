@@ -215,7 +215,7 @@ class MultiPressNameText(TextEntity):
 
 class MultiPressSourceText(TextEntity):
     def __init__(self, prefix: str, device_name: str) -> None:
-        self._attr_name = f"{device_name.replace('_', ' ').title()} Virtual Key Source Key"
+        self._attr_name = f"{device_name.replace('_', ' ').title()} Virtual Key Name Source"
         self._attr_unique_id = f"ir_remote_{prefix}_{device_name}_multipress_source"
         self._attr_native_value = ""
         self._attr_native_min = 0
