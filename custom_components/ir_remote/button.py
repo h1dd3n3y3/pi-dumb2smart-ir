@@ -15,11 +15,6 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import CONF_TOPIC_PREFIX, DEFAULT_TOPIC_PREFIX, DOMAIN
 
 
-def _ir_button_name(device_name: str, key: str, is_virtual: bool) -> str:
-    label = f"{device_name} {key}".replace("_", " ").title()
-    return f"~ {label}" if is_virtual else label
-
-
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
@@ -27,28 +22,6 @@ async def async_setup_entry(
 ) -> None:
     prefix = entry.data.get(CONF_TOPIC_PREFIX, DEFAULT_TOPIC_PREFIX)
     added: set[str] = set()
-    virtual_key_names: dict[str, set[str]] = {}
-    ir_buttons: dict[str, "IRRemoteButton"] = {}
-
-    @callback
-    def handle_virtual_keys(msg):
-        try:
-            data = json.loads(msg.payload)
-        except Exception:
-            return
-
-        virtual_key_names.clear()
-        for device_name, vkeys in data.items():
-            virtual_key_names[device_name] = set(vkeys.keys())
-
-        for device_name, vkeys in virtual_key_names.items():
-            for vkey in vkeys:
-                btn = ir_buttons.get(f"{device_name}_{vkey}")
-                if btn is not None:
-                    expected = _ir_button_name(device_name, vkey, is_virtual=True)
-                    if btn._attr_name != expected:
-                        btn._attr_name = expected
-                        btn.async_write_ha_state()
 
     @callback
     def handle_devices(msg):
@@ -103,15 +76,11 @@ async def async_setup_entry(
                 uid = f"{device_name}_{key}"
                 if uid not in added:
                     added.add(uid)
-                    is_virtual = key in virtual_key_names.get(device_name, set())
-                    btn = IRRemoteButton(hass, prefix, device_name, key, is_virtual=is_virtual)
-                    ir_buttons[uid] = btn
-                    new_entities.append(btn)
+                    new_entities.append(IRRemoteButton(hass, prefix, device_name, key))
 
         if new_entities:
             async_add_entities(new_entities)
 
-    await mqtt.async_subscribe(hass, f"{prefix}/virtual_keys", handle_virtual_keys)
     await mqtt.async_subscribe(hass, f"{prefix}/devices", handle_devices)
     async_add_entities([
         ReloadButton(hass, prefix),
@@ -337,13 +306,12 @@ class IRRemoteButton(ButtonEntity):
         prefix: str,
         device_name: str,
         key: str,
-        is_virtual: bool = False,
     ) -> None:
         self.hass = hass
         self._prefix = prefix
         self._device = device_name
         self._key = key
-        self._attr_name = _ir_button_name(device_name, key, is_virtual)
+        self._attr_name = f"{device_name} {key}".replace("_", " ").title()
         self._attr_unique_id = f"ir_remote_{prefix}_{device_name}_{key}"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, f"ir_{prefix}_{device_name}")},
