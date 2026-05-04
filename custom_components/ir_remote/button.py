@@ -39,8 +39,6 @@ async def async_setup_entry(
             valid_unique_ids.add(f"ir_remote_{prefix}_{device_name}_learn")
             valid_unique_ids.add(f"ir_remote_{prefix}_{device_name}_delete")
             valid_unique_ids.add(f"ir_remote_{prefix}_{device_name}_rename")
-            valid_unique_ids.add(f"ir_remote_{prefix}_{device_name}_enable_repeat")
-            valid_unique_ids.add(f"ir_remote_{prefix}_{device_name}_disable_repeat")
             valid_unique_ids.add(f"ir_remote_{prefix}_{device_name}_register_multipress")
             valid_unique_ids.add(f"ir_remote_{prefix}_{device_name}_delete_virtual_key")
             for key in keys:
@@ -69,8 +67,6 @@ async def async_setup_entry(
                 new_entities.append(LearnButton(hass, prefix, device_name, entry.entry_id))
                 new_entities.append(DeleteButton(hass, prefix, device_name, entry.entry_id))
                 new_entities.append(RenameButton(hass, prefix, device_name, entry.entry_id))
-                new_entities.append(EnableRepeatButton(hass, prefix, device_name, entry.entry_id))
-                new_entities.append(DisableRepeatButton(hass, prefix, device_name, entry.entry_id))
                 new_entities.append(RegisterMultiPressButton(hass, prefix, device_name, entry.entry_id))
                 new_entities.append(DeleteVirtualKeyButton(hass, prefix, device_name, entry.entry_id))
             for key in keys:
@@ -298,68 +294,6 @@ class RenameButton(ButtonEntity):
             old_text.clear()
         if new_text:
             new_text.clear()
-
-
-class EnableRepeatButton(ButtonEntity):
-    def __init__(self, hass: HomeAssistant, prefix: str, device_name: str, entry_id: str) -> None:
-        self.hass = hass
-        self._prefix = prefix
-        self._device = device_name
-        self._entry_id = entry_id
-        self._attr_name = f"{device_name.replace('_', ' ').title()} Enable Repeat"
-        self._attr_unique_id = f"ir_remote_{prefix}_{device_name}_enable_repeat"
-        self._attr_entity_category = EntityCategory.CONFIG
-        self._attr_icon = "mdi:repeat"
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, f"ir_{prefix}_{device_name}")},
-            name=device_name.replace("_", " ").title(),
-            model="ANAVI IR pHAT",
-            manufacturer="ANAVI",
-        )
-
-    async def async_press(self) -> None:
-        text_entity = self.hass.data[DOMAIN][self._entry_id]["repeat_key_texts"].get(self._device)
-        key_name = (text_entity._attr_native_value or "").strip() if text_entity else ""
-        if not key_name:
-            return
-        await mqtt.async_publish(
-            self.hass,
-            f"{self._prefix}/key/set_options",
-            json.dumps({"device": self._device, "key": key_name, "repeat": 2, "delay_ms": 300}),
-        )
-        if text_entity:
-            text_entity.clear()
-
-
-class DisableRepeatButton(ButtonEntity):
-    def __init__(self, hass: HomeAssistant, prefix: str, device_name: str, entry_id: str) -> None:
-        self.hass = hass
-        self._prefix = prefix
-        self._device = device_name
-        self._entry_id = entry_id
-        self._attr_name = f"{device_name.replace('_', ' ').title()} Disable Repeat"
-        self._attr_unique_id = f"ir_remote_{prefix}_{device_name}_disable_repeat"
-        self._attr_entity_category = EntityCategory.CONFIG
-        self._attr_icon = "mdi:repeat-off"
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, f"ir_{prefix}_{device_name}")},
-            name=device_name.replace("_", " ").title(),
-            model="ANAVI IR pHAT",
-            manufacturer="ANAVI",
-        )
-
-    async def async_press(self) -> None:
-        text_entity = self.hass.data[DOMAIN][self._entry_id]["repeat_key_texts"].get(self._device)
-        key_name = (text_entity._attr_native_value or "").strip() if text_entity else ""
-        if not key_name:
-            return
-        await mqtt.async_publish(
-            self.hass,
-            f"{self._prefix}/key/set_options",
-            json.dumps({"device": self._device, "key": key_name, "repeat": 1}),
-        )
-        if text_entity:
-            text_entity.clear()
 
 
 class IRRemoteButton(ButtonEntity):

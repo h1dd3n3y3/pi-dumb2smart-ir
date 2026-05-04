@@ -17,9 +17,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data[DOMAIN][entry.entry_id] = {
         "key_name_texts": {},
         "rename_target_texts": {},
-        "repeat_key_texts": {},
-        "key_options": {},
-        "latest_key_options": {},
         "multipress_name_texts": {},
         "multipress_source_texts": {},
         "multipress_count_numbers": {},

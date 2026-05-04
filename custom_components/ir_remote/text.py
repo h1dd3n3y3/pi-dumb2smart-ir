@@ -46,7 +46,6 @@ async def async_setup_entry(
         for device_name in devices:
             valid_unique_ids.add(f"ir_remote_{prefix}_{device_name}_key_name")
             valid_unique_ids.add(f"ir_remote_{prefix}_{device_name}_rename_to")
-            valid_unique_ids.add(f"ir_remote_{prefix}_{device_name}_repeat_key")
             valid_unique_ids.add(f"ir_remote_{prefix}_{device_name}_multipress_name")
             valid_unique_ids.add(f"ir_remote_{prefix}_{device_name}_multipress_source")
 
@@ -65,9 +64,6 @@ async def async_setup_entry(
                 rename_entity = RenameTargetText(prefix, device_name)
                 entry_data["rename_target_texts"][device_name] = rename_entity
                 new_entities.append(rename_entity)
-                repeat_key_entity = RepeatKeyText(prefix, device_name)
-                entry_data["repeat_key_texts"][device_name] = repeat_key_entity
-                new_entities.append(repeat_key_entity)
                 mp_name_entity = MultiPressNameText(prefix, device_name)
                 entry_data["multipress_name_texts"][device_name] = mp_name_entity
                 new_entities.append(mp_name_entity)
@@ -227,33 +223,6 @@ class MultiPressSourceText(TextEntity):
         self._attr_available = True
         self._attr_entity_category = EntityCategory.CONFIG
         self._attr_icon = "mdi:gesture-tap"
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, f"ir_{prefix}_{device_name}")},
-            name=device_name.replace("_", " ").title(),
-            model="ANAVI IR pHAT",
-            manufacturer="ANAVI",
-        )
-
-    async def async_set_value(self, value: str) -> None:
-        self._attr_native_value = value
-        self.async_write_ha_state()
-
-    @callback
-    def clear(self) -> None:
-        self._attr_native_value = ""
-        self.async_write_ha_state()
-
-
-class RepeatKeyText(TextEntity):
-    def __init__(self, prefix: str, device_name: str) -> None:
-        self._attr_name = f"{device_name.replace('_', ' ').title()} Repeat Key"
-        self._attr_unique_id = f"ir_remote_{prefix}_{device_name}_repeat_key"
-        self._attr_native_value = ""
-        self._attr_native_min = 0
-        self._attr_native_max = 64
-        self._attr_available = True
-        self._attr_entity_category = EntityCategory.CONFIG
-        self._attr_icon = "mdi:repeat"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, f"ir_{prefix}_{device_name}")},
             name=device_name.replace("_", " ").title(),
