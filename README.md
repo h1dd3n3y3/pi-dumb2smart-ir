@@ -67,15 +67,44 @@ Once configured, the integration creates entities for each remote device the bri
 
 ---
 
-## Recording a new key
+## Managing remotes and keys
 
-1. Enter the **device name** and **key name** in the text inputs
-2. Press **Learn New Key** for the target device
-3. Watch the **IR Recording Status** sensor — it will show `recording`
-4. Point your physical remote at the Pi and press the button **3 times**
-5. Status changes to `done` — the new button appears automatically in HA
+All management is done through the Home Assistant UI.
 
-> No restart required for new keys. Entities update live via MQTT discovery.
+### Creating a remote
+
+1. Go to **Settings → Devices & Services** and open the **IR Remote** integration
+2. Open the **bridge device**
+3. Enter a name in the **Device Name** text input (e.g. `samsung_tv`) and press **Create New Remote**
+
+Each remote represents one physical IR-controlled device.
+
+### Recording a key
+
+1. Open the remote's device page inside the integration
+2. Enter a name in the **Key Name** text input (e.g. `power`, `volume_up`)
+3. Press **Learn Key**
+4. Point your physical remote at the Pi and press the target button within 30 seconds
+5. The **IR Recording Status** sensor transitions `idle` → `recording` → `done`
+6. The key name field clears and a new button entity appears in HA automatically
+
+> No restart required. Entities update live via MQTT discovery.
+
+### Deleting a key
+
+1. Open the remote's device page
+2. Press the **Delete Key** button next to the key you want to remove
+
+### Renaming a key
+
+1. Open the remote's device page
+2. Enter the new name in the **Rename Key** text input
+3. Press **Rename Key**
+
+### Deleting or renaming a remote
+
+1. Open the **bridge device**
+2. Enter the remote name in the relevant text input and press **Delete Remote** or **Rename Remote**
 
 ---
 
