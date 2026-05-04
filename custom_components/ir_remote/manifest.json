@@ -1,6 +1,6 @@
 {
   "domain": "ir_remote",
-  "name": "IR Remote (ANAVI pHAT)",
+  "name": "IR Remote (ANAVI IR pHAT)",
   "codeowners": ["@h1dd3n3y3"],
   "config_flow": true,
   "dependencies": ["mqtt"],

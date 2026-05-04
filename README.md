@@ -1,4 +1,4 @@
-# IR Remote (ANAVI pHAT) — Home Assistant Integration
+# IR Remote (ANAVI IR pHAT) — Home Assistant Integration
 
 [![Deploy](https://github.com/h1dd3n3y3/pi-dumb2smart-ir/actions/workflows/deploy.yml/badge.svg?branch=main)](https://github.com/h1dd3n3y3/pi-dumb2smart-ir/actions/workflows/deploy.yml)
 [![HACS Action](https://github.com/h1dd3n3y3/pi-dumb2smart-ir/actions/workflows/hacs.yml/badge.svg)](https://github.com/h1dd3n3y3/pi-dumb2smart-ir/actions/workflows/hacs.yml)
@@ -94,7 +94,7 @@ Available under **Developer Tools → Actions**:
 ## Architecture
 
 ```
-Home Assistant  ──MQTT──▶  Mosquitto broker  ──MQTT──▶  IR Bridge (Pi + ANAVI pHAT)  ──IR──▶  Device
+Home Assistant  ──MQTT──▶  Mosquitto broker  ──MQTT──▶  IR Bridge (Pi + ANAVI IR pHAT)  ──IR──▶  Device
 ```
 
 The integration uses `local_push` — the bridge maintains a persistent MQTT connection and pushes state changes instantly. No polling.
