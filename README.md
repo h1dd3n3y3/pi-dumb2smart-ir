@@ -123,20 +123,33 @@ Each remote represents one physical IR-controlled device.
 
 ## Repeat
 
-Some devices need a key pressed more than once to register (e.g. some amplifiers). Repeat fires the IR signal N times with a configurable delay between each press.
+Some devices need a key pressed more than once to register (e.g. some amplifiers). There are two ways to achieve this — both are equivalent and either can be used depending on your preference.
 
-### Enabling repeat for a key
+### Option A — per-key repeat in the device JSON
+
+Edit the device JSON on the bridge directly and add a `key_options` entry for the key:
+
+```json
+"key_options": {
+  "power": { "repeat": 2, "delay_ms": 300 }
+}
+```
+
+Then trigger a reload from the bridge device page in HA. The bridge will fire the `power` signal twice with a 300 ms gap on every press.
+
+### Option B — virtual key from the HA UI
+
+Create a virtual key that fires the source key N times with a configurable delay — no SSH required:
 
 1. Open the remote's device page
-2. Enter the key name in the **Repeat Key** field (e.g. `power`)
-3. Press **Enable Repeat**
-4. Two new controls appear for that key: **Repeat** (count, 1–10) and **Repeat Delay** (ms)
-5. Adjust the values — changes publish to the bridge immediately
+2. Set **Virtual Key Name** to e.g. `power_double`
+3. Set **Virtual Key Name Source** to `power`
+4. Set **Virtual Key Press Count** to `2` and **Virtual Key Press Delay** to `300` ms
+5. Press **Virtual Key Register**
 
-### Disabling repeat
+A new `power_double` button appears and fires `power` twice with a 300 ms delay.
 
-1. Enter the key name in the **Repeat Key** field
-2. Press **Disable Repeat** — the count and delay controls are removed
+**Both approaches produce the same result.** Use the JSON option when you want the behaviour baked into the bridge configuration; use the virtual key option when you want to manage everything from the HA UI without touching the Pi.
 
 ---
 
@@ -149,16 +162,16 @@ Virtual keys are multi-press macros stored on the bridge. Pressing a virtual key
 ### Creating a virtual key
 
 1. Open the remote's device page
-2. Fill in the **Multi-Press Name** field (e.g. `vol_up_5`) — this is the name of the new button
-3. Fill in the **Multi-Press Source Key** field (e.g. `vol_up`) — the existing key to repeat
-4. Set **Multi-Press Count** (e.g. `5`) and **Multi-Press Delay** (e.g. `150` ms)
-5. Press **Register Multi-Press**
-6. The bridge creates the virtual key and a new button entity appears automatically
+2. Fill in **Virtual Key Name** (e.g. `vol_up_5`) — this becomes the new button name
+3. Fill in **Virtual Key Name Source** (e.g. `vol_up`) — the existing key to repeat
+4. Set **Virtual Key Press Count** (e.g. `5`) and **Virtual Key Press Delay** (e.g. `150` ms)
+5. Press **Virtual Key Register**
+6. The bridge stores the virtual key and a new button entity appears automatically
 
 ### Deleting a virtual key
 
-1. Enter the virtual key name in the **Multi-Press Name** field
-2. Press **Delete Virtual Key**
+1. Enter the virtual key name in the **Virtual Key Name** field
+2. Press **Virtual Key Delete**
 
 ---
 
