@@ -311,7 +311,7 @@ class IRRemoteButton(ButtonEntity):
         self._prefix = prefix
         self._device = device_name
         self._key = key
-        self._attr_name = f"{device_name} {key}".replace("_", " ").title()
+        self._attr_name = f"{device_name.replace('_', ' ').title()} {key}"
         self._attr_unique_id = f"ir_remote_{prefix}_{device_name}_{key}"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, f"ir_{prefix}_{device_name}")},
