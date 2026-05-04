@@ -20,6 +20,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         "repeat_key_texts": {},
         "key_options": {},
         "latest_key_options": {},
+        "multipress_name_texts": {},
+        "multipress_source_texts": {},
+        "multipress_count_numbers": {},
+        "multipress_delay_numbers": {},
     }
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 

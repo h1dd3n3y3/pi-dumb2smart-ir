@@ -1,3 +1,4 @@
+import asyncio
 import json
 
 from homeassistant.components import mqtt
@@ -19,6 +20,9 @@ async def async_setup_entry(
 ) -> None:
     prefix = entry.data.get(CONF_TOPIC_PREFIX, DEFAULT_TOPIC_PREFIX)
     added: set[str] = set()
+    entry_data = hass.data[DOMAIN][entry.entry_id]
+    entry_data["add_button_entities"] = async_add_entities
+    entry_data["button_added"] = added
 
     @callback
     def handle_devices(msg):
@@ -41,6 +45,9 @@ async def async_setup_entry(
             valid_unique_ids.add(f"ir_remote_{prefix}_{device_name}_rename")
             valid_unique_ids.add(f"ir_remote_{prefix}_{device_name}_enable_repeat")
             valid_unique_ids.add(f"ir_remote_{prefix}_{device_name}_disable_repeat")
+            valid_unique_ids.add(f"ir_remote_{prefix}_{device_name}_register_multipress")
+            for macro_name in entry.options.get("macros", {}).get(device_name, {}):
+                valid_unique_ids.add(f"ir_remote_{prefix}_{device_name}_macro_{macro_name}")
             for key in keys:
                 valid_unique_ids.add(f"ir_remote_{prefix}_{device_name}_{key}")
 
@@ -69,6 +76,12 @@ async def async_setup_entry(
                 new_entities.append(RenameButton(hass, prefix, device_name, entry.entry_id))
                 new_entities.append(EnableRepeatButton(hass, prefix, device_name, entry.entry_id))
                 new_entities.append(DisableRepeatButton(hass, prefix, device_name, entry.entry_id))
+                new_entities.append(RegisterMultiPressButton(hass, prefix, device_name, entry))
+            for macro_name, macro_def in entry.options.get("macros", {}).get(device_name, {}).items():
+                macro_uid = f"macro_{device_name}_{macro_name}"
+                if macro_uid not in added:
+                    added.add(macro_uid)
+                    new_entities.append(IRMacroButton(hass, prefix, device_name, macro_name, macro_def))
             for key in keys:
                 uid = f"{device_name}_{key}"
                 if uid not in added:
@@ -385,3 +398,95 @@ class IRRemoteButton(ButtonEntity):
             f"{self._prefix}/{self._device}/send",
             self._key,
         )
+
+
+class RegisterMultiPressButton(ButtonEntity):
+    def __init__(self, hass: HomeAssistant, prefix: str, device_name: str, entry) -> None:
+        self.hass = hass
+        self._prefix = prefix
+        self._device = device_name
+        self._entry = entry
+        self._attr_name = f"{device_name.replace('_', ' ').title()} Register Multi-Press"
+        self._attr_unique_id = f"ir_remote_{prefix}_{device_name}_register_multipress"
+        self._attr_entity_category = EntityCategory.CONFIG
+        self._attr_icon = "mdi:plus-circle-outline"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, f"ir_{prefix}_{device_name}")},
+            name=device_name.replace("_", " ").title(),
+            model="ANAVI IR pHAT",
+            manufacturer="ANAVI",
+        )
+
+    async def async_press(self) -> None:
+        entry_data = self.hass.data[DOMAIN][self._entry.entry_id]
+        name_text = entry_data["multipress_name_texts"].get(self._device)
+        source_text = entry_data["multipress_source_texts"].get(self._device)
+        count_num = entry_data["multipress_count_numbers"].get(self._device)
+        delay_num = entry_data["multipress_delay_numbers"].get(self._device)
+
+        name = (name_text._attr_native_value or "").strip() if name_text else ""
+        source = (source_text._attr_native_value or "").strip() if source_text else ""
+        count = int(count_num._attr_native_value) if count_num else 2
+        delay_ms = int(delay_num._attr_native_value) if delay_num else 300
+
+        if not name or not source:
+            return
+
+        macro_def = {"source_key": source, "count": count, "delay_ms": delay_ms}
+
+        macros = {k: dict(v) for k, v in self._entry.options.get("macros", {}).items()}
+        macros.setdefault(self._device, {})[name] = macro_def
+        self.hass.config_entries.async_update_entry(
+            self._entry, options={**self._entry.options, "macros": macros}
+        )
+
+        uid = f"macro_{self._device}_{name}"
+        added = entry_data.get("button_added", set())
+        if uid not in added:
+            added.add(uid)
+            add_entities = entry_data.get("add_button_entities")
+            if add_entities:
+                add_entities([IRMacroButton(
+                    self.hass, self._prefix, self._device, name, macro_def
+                )])
+
+        if name_text:
+            name_text.clear()
+        if source_text:
+            source_text.clear()
+
+
+class IRMacroButton(ButtonEntity):
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        prefix: str,
+        device_name: str,
+        macro_name: str,
+        macro_def: dict,
+    ) -> None:
+        self.hass = hass
+        self._prefix = prefix
+        self._device = device_name
+        self._source_key = macro_def["source_key"]
+        self._count = macro_def["count"]
+        self._delay_ms = macro_def["delay_ms"]
+        self._attr_name = f"{device_name} {macro_name}".replace("_", " ").title()
+        self._attr_unique_id = f"ir_remote_{prefix}_{device_name}_macro_{macro_name}"
+        self._attr_icon = "mdi:repeat-variant"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, f"ir_{prefix}_{device_name}")},
+            name=device_name.replace("_", " ").title(),
+            model="ANAVI IR pHAT",
+            manufacturer="ANAVI",
+        )
+
+    async def async_press(self) -> None:
+        for i in range(self._count):
+            if i > 0:
+                await asyncio.sleep(self._delay_ms / 1000)
+            await mqtt.async_publish(
+                self.hass,
+                f"{self._prefix}/{self._device}/send",
+                self._source_key,
+            )

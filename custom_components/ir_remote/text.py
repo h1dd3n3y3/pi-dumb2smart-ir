@@ -47,6 +47,8 @@ async def async_setup_entry(
             valid_unique_ids.add(f"ir_remote_{prefix}_{device_name}_key_name")
             valid_unique_ids.add(f"ir_remote_{prefix}_{device_name}_rename_to")
             valid_unique_ids.add(f"ir_remote_{prefix}_{device_name}_repeat_key")
+            valid_unique_ids.add(f"ir_remote_{prefix}_{device_name}_multipress_name")
+            valid_unique_ids.add(f"ir_remote_{prefix}_{device_name}_multipress_source")
 
         registry = er.async_get(hass)
         for entry_item in er.async_entries_for_config_entry(registry, entry.entry_id):
@@ -66,6 +68,12 @@ async def async_setup_entry(
                 repeat_key_entity = RepeatKeyText(prefix, device_name)
                 entry_data["repeat_key_texts"][device_name] = repeat_key_entity
                 new_entities.append(repeat_key_entity)
+                mp_name_entity = MultiPressNameText(prefix, device_name)
+                entry_data["multipress_name_texts"][device_name] = mp_name_entity
+                new_entities.append(mp_name_entity)
+                mp_source_entity = MultiPressSourceText(prefix, device_name)
+                entry_data["multipress_source_texts"][device_name] = mp_source_entity
+                new_entities.append(mp_source_entity)
 
         if new_entities:
             _LOGGER.debug("Adding %d text entities for: %s", len(new_entities), [e.unique_id for e in new_entities])
@@ -165,6 +173,60 @@ class RenameTargetText(TextEntity):
         self._attr_available = True
         self._attr_entity_category = EntityCategory.CONFIG
         self._attr_icon = "mdi:form-textbox"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, f"ir_{prefix}_{device_name}")},
+            name=device_name.replace("_", " ").title(),
+            model="ANAVI IR pHAT",
+            manufacturer="ANAVI",
+        )
+
+    async def async_set_value(self, value: str) -> None:
+        self._attr_native_value = value
+        self.async_write_ha_state()
+
+    @callback
+    def clear(self) -> None:
+        self._attr_native_value = ""
+        self.async_write_ha_state()
+
+
+class MultiPressNameText(TextEntity):
+    def __init__(self, prefix: str, device_name: str) -> None:
+        self._attr_name = f"{device_name.replace('_', ' ').title()} Multi-Press Name"
+        self._attr_unique_id = f"ir_remote_{prefix}_{device_name}_multipress_name"
+        self._attr_native_value = ""
+        self._attr_native_min = 0
+        self._attr_native_max = 64
+        self._attr_available = True
+        self._attr_entity_category = EntityCategory.CONFIG
+        self._attr_icon = "mdi:repeat-variant"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, f"ir_{prefix}_{device_name}")},
+            name=device_name.replace("_", " ").title(),
+            model="ANAVI IR pHAT",
+            manufacturer="ANAVI",
+        )
+
+    async def async_set_value(self, value: str) -> None:
+        self._attr_native_value = value
+        self.async_write_ha_state()
+
+    @callback
+    def clear(self) -> None:
+        self._attr_native_value = ""
+        self.async_write_ha_state()
+
+
+class MultiPressSourceText(TextEntity):
+    def __init__(self, prefix: str, device_name: str) -> None:
+        self._attr_name = f"{device_name.replace('_', ' ').title()} Multi-Press Source Key"
+        self._attr_unique_id = f"ir_remote_{prefix}_{device_name}_multipress_source"
+        self._attr_native_value = ""
+        self._attr_native_min = 0
+        self._attr_native_max = 64
+        self._attr_available = True
+        self._attr_entity_category = EntityCategory.CONFIG
+        self._attr_icon = "mdi:gesture-tap"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, f"ir_{prefix}_{device_name}")},
             name=device_name.replace("_", " ").title(),
