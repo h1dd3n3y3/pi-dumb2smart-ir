@@ -122,7 +122,7 @@ Some devices need a key pressed more than once to register (e.g. some amplifiers
 
 ### Option A — per-key repeat in the device JSON
 
-Edit the device JSON on the bridge directly and add a `key_options` entry for the key:
+Edit the device JSON on the bridge directly and add a `key_options` entry for the key (see [bridge documentation](https://github.com/h1dd3n3y3/pi-dumb2smart-ir-bridge#per-key-repeat)):
 
 ```json
 "key_options": {
