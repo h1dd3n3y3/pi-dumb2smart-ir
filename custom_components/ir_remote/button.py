@@ -380,8 +380,8 @@ class RegisterMultiPressButton(ButtonEntity):
         _LOGGER.debug("RegisterMultiPress: published to %s/virtual_key/create", self._prefix)
 
         if name_text:
-            name_text.clear()
+            await name_text.async_set_value("")
         if source_text:
-            source_text.clear()
+            await source_text.async_set_value("")
 
 
