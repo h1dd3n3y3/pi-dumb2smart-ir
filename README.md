@@ -55,17 +55,12 @@ Once configured, the integration creates entities for each remote device the bri
 | `button.<device>_<key>` | Button | One button per recorded IR key — press to fire the signal |
 | `button.<device>_<virtual_key>` | Button | One button per virtual key — press to fire a multi-press sequence |
 | `button.<device>_learn_key` | Button (config) | Puts the bridge into recording mode for a new key |
-| `button.<device>_delete_key` | Button (config) | Deletes the key named in the Key Name field |
+| `button.<device>_delete_key` | Button (config) | Deletes the key named in the Key Name field (works for regular and virtual keys) |
 | `button.<device>_rename_key` | Button (config) | Renames a key |
-| `button.<device>_enable_repeat` | Button (config) | Enables repeat for the key named in the Repeat Key field |
-| `button.<device>_disable_repeat` | Button (config) | Disables repeat for that key |
-| `button.<device>_register_multi_press` | Button (config) | Creates a new virtual key |
-| `button.<device>_delete_virtual_key` | Button (config) | Deletes a virtual key |
-| `number.<device>_<key>_repeat` | Number (config) | Repeat count for a key (appears only when repeat is enabled) |
-| `number.<device>_<key>_repeat_delay` | Number (config) | Delay between repeats in ms (appears only when repeat is enabled) |
-| `number.<device>_multi_press_count` | Number (config) | Press count for the next virtual key to register |
-| `number.<device>_multi_press_delay` | Number (config) | Delay between presses for the next virtual key to register |
-| Text inputs | Text (config) | Key Name, New Key Name, Repeat Key, Multi-Press Name, Multi-Press Source Key |
+| `button.<device>_virtual_key_register` | Button (config) | Creates a new virtual key |
+| `number.<device>_virtual_key_press_count` | Number (config) | Number of presses for the next virtual key |
+| `number.<device>_virtual_key_press_delay` | Number (config) | Delay in ms between presses for the next virtual key |
+| Text inputs | Text (config) | Key Name, New Key Name, Virtual Key Name, Virtual Key Name Source |
 
 ### Bridge-level entities
 
@@ -107,6 +102,8 @@ Each remote represents one physical IR-controlled device.
 
 1. Open the remote's device page
 2. Enter the key name in the **Key Name** field and press **Delete Key**
+
+This works for both regular keys and virtual keys.
 
 ### Renaming a key
 
@@ -170,8 +167,8 @@ Virtual keys are multi-press macros stored on the bridge. Pressing a virtual key
 
 ### Deleting a virtual key
 
-1. Enter the virtual key name in the **Virtual Key Name** field
-2. Press **Virtual Key Delete**
+1. Enter the virtual key name in the **Key Name** field
+2. Press **Delete Key**
 
 ---
 
