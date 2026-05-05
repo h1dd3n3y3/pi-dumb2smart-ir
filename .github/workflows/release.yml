@@ -7,6 +7,7 @@ on:
 
 jobs:
   release:
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -23,7 +24,9 @@ jobs:
           MAJOR=$(echo "$LATEST" | cut -d. -f1 | tr -d 'v')
           MINOR=$(echo "$LATEST" | cut -d. -f2)
           PATCH=$(echo "$LATEST" | cut -d. -f3)
-          echo "tag=v${MAJOR}.${MINOR}.$((PATCH + 1))" >> "$GITHUB_OUTPUT"
+          TAG="v${MAJOR}.${MINOR}.$((PATCH + 1))"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "number=${TAG#v}" >> "$GITHUB_OUTPUT"
 
       - name: Get release notes from commit body
         id: notes
@@ -35,12 +38,17 @@ jobs:
           echo "$NOTES" >> "$GITHUB_OUTPUT"
           echo "EOF" >> "$GITHUB_OUTPUT"
 
-      - name: Tag and release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Bump manifest.json version
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          sed -i 's/"version": ".*"/"version": "${{ steps.version.outputs.number }}"/' custom_components/ir_remote/manifest.json
+          git add custom_components/ir_remote/manifest.json
+          git commit -m "chore: bump version to ${{ steps.version.outputs.number }} [skip ci]"
+          git push
+
+      - name: Tag and release
+        run: |
           git tag "${{ steps.version.outputs.tag }}"
           git push origin "${{ steps.version.outputs.tag }}"
 
