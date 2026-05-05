@@ -24,7 +24,10 @@ jobs:
           MAJOR=$(echo "$LATEST" | cut -d. -f1 | tr -d 'v')
           MINOR=$(echo "$LATEST" | cut -d. -f2)
           PATCH=$(echo "$LATEST" | cut -d. -f3)
-          TAG="v${MAJOR}.${MINOR}.$((PATCH + 1))"
+          AUTO_TAG="v${MAJOR}.${MINOR}.$((PATCH + 1))"
+          MANIFEST_VERSION=$(python3 -c "import json; print(json.load(open('custom_components/ir_remote/manifest.json'))['version'])")
+          MANIFEST_TAG="v${MANIFEST_VERSION}"
+          TAG=$(printf '%s\n%s\n' "$AUTO_TAG" "$MANIFEST_TAG" | sort -V | tail -1)
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "number=${TAG#v}" >> "$GITHUB_OUTPUT"
 
