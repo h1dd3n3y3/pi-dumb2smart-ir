@@ -1,34 +1,41 @@
 name: Release
 
 on:
-  push:
-    branches:
-      - main
+  workflow_run:
+    workflows: ["Hassfest"]
+    types: [completed]
+    branches: [main]
 
 jobs:
-  hacs:
-    if: "!contains(github.event.head_commit.message, '[skip ci]')"
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: hacs/action@main
-        with:
-          category: integration
-
-  hassfest:
-    if: "!contains(github.event.head_commit.message, '[skip ci]')"
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: home-assistant/actions/hassfest@master
-
   release:
-    needs: [hacs, hassfest]
-    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    if: |
+      github.event.workflow_run.conclusion == 'success' &&
+      !contains(github.event.workflow_run.head_commit.message, '[skip ci]')
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
+      - name: Verify HACS Action also succeeded for this commit
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COMMIT_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          for attempt in $(seq 1 60); do
+            CONCLUSION=$(gh api "repos/${{ github.repository }}/actions/workflows/hacs.yml/runs?head_sha=$COMMIT_SHA" --jq '.workflow_runs[0].conclusion // "none"')
+            STATUS=$(gh api "repos/${{ github.repository }}/actions/workflows/hacs.yml/runs?head_sha=$COMMIT_SHA" --jq '.workflow_runs[0].status // "none"')
+            echo "Attempt $attempt: HACS Action status=$STATUS conclusion=$CONCLUSION"
+            if [ "$CONCLUSION" = "success" ]; then
+              exit 0
+            fi
+            if [ "$STATUS" = "completed" ] && [ "$CONCLUSION" != "success" ]; then
+              echo "HACS Action did not succeed (conclusion=$CONCLUSION) — aborting release"
+              exit 1
+            fi
+            sleep 10
+          done
+          echo "Timed out waiting for HACS Action"
+          exit 1
+
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -51,8 +58,8 @@ jobs:
       - name: Get release notes from commit body
         id: notes
         run: |
-          BODY=$(git log -1 --format='%b')
-          SUBJECT=$(git log -1 --format='%s')
+          BODY=$(git log -1 --format='%b' "${{ github.event.workflow_run.head_sha }}")
+          SUBJECT=$(git log -1 --format='%s' "${{ github.event.workflow_run.head_sha }}")
           NOTES="${BODY:-$SUBJECT}"
           echo "notes<<EOF" >> "$GITHUB_OUTPUT"
           echo "$NOTES" >> "$GITHUB_OUTPUT"
