@@ -1,5 +1,6 @@
 # IR Remote (ANAVI IR pHAT) — Home Assistant Integration
 
+[![hacs_badge](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/integration)
 [![Deploy](https://github.com/h1dd3n3y3/pi-dumb2smart-ir/actions/workflows/deploy.yml/badge.svg?branch=main)](https://github.com/h1dd3n3y3/pi-dumb2smart-ir/actions/workflows/deploy.yml)
 [![HACS Action](https://github.com/h1dd3n3y3/pi-dumb2smart-ir/actions/workflows/hacs.yml/badge.svg)](https://github.com/h1dd3n3y3/pi-dumb2smart-ir/actions/workflows/hacs.yml)
 [![Hassfest](https://github.com/h1dd3n3y3/pi-dumb2smart-ir/actions/workflows/hassfest.yml/badge.svg)](https://github.com/h1dd3n3y3/pi-dumb2smart-ir/actions/workflows/hassfest.yml)
@@ -18,17 +19,12 @@ Control any IR-controlled device (TV, AC, amplifier) from Home Assistant. A Rasp
 
 ## Installation
 
-### Via HACS (default store — pending)
-
-> This integration is awaiting approval for inclusion in the HACS default store ([PR #7409](https://github.com/hacs/default/pull/7409)). Once merged it will be searchable directly. Until then, use the custom repository method below.
-
-### Via HACS (custom repository)
+### Via HACS
 
 1. In Home Assistant, go to **HACS → Integrations**
-2. Click the three-dot menu (⋮) and select **Custom repositories**
-3. Add `https://github.com/h1dd3n3y3/pi-dumb2smart-ir` with category **Integration**
-4. Search for **IR Remote** and install it
-5. Restart Home Assistant
+2. Search for **IR Remote** and install it
+3. Restart Home Assistant
+
 
 ---
 
