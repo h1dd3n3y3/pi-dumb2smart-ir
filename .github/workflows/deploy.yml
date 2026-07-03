@@ -11,4 +11,4 @@ jobs:
     steps:
       - name: Pull latest code on pi5
         run: |
-          cd ~/pi-dumb2smart-ir && git pull
+          cd ~/home-assistant/pi-dumb2smart-ir && git pull
