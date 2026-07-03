@@ -21,6 +21,10 @@ Control any IR-controlled device (TV, AC, amplifier) from Home Assistant. A Rasp
 
 ### Via HACS
 
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=h1dd3n3y3&repository=pi-dumb2smart-ir&category=integration)
+
+Or manually:
+
 1. In Home Assistant, go to **HACS → Integrations**
 2. Search for **IR Remote** and install it
 3. Restart Home Assistant
