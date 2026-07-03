@@ -12,7 +12,7 @@ Control any IR-controlled device (TV, AC, amplifier) from Home Assistant. A Rasp
 
 ## Prerequisites
 
-- Home Assistant with the **MQTT integration** configured
+- Home Assistant with the **MQTT integration** configured — a Mosquitto guide can be found [`here`](https://randomnerdtutorials.com/how-to-install-mosquitto-broker-on-raspberry-pi/#mosquitto-no-authentication). After that, go to Home Assistant->Settings->Devices & services->Add integration->MQTT->MQTT
 - A running IR bridge — see the [`pi-dumb2smart-ir-bridge`](https://github.com/h1dd3n3y3/pi-dumb2smart-ir-bridge) repo for setup instructions
 
 ---
