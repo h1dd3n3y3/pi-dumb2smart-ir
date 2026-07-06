@@ -3,4 +3,3 @@ actions-runner/
 !custom_components/**/*.json
 !hacs.json
 .env
-thesis/
