@@ -27,7 +27,7 @@ Control any IR-controlled device (TV, AC, amplifier) from Home Assistant. A Rasp
 Or manually:
 
 1. In Home Assistant, open **HACS**
-2. Search for **IR Remote** and install it
+2. Search for **IR Remote (ANAVI IR pHAT)** and install it
 3. Restart Home Assistant
 
 
